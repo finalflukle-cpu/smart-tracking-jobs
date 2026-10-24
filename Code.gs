@@ -13,12 +13,14 @@
  * PIN แอดมินเริ่มต้น: 000000 (เปลี่ยนได้ในหน้า ตั้งค่า ของแอป)
  */
 
-var APP_VERSION = '1.0.0';
+var APP_VERSION = '1.1.0';
 var DEFAULT_ADMIN_PIN = '000000';
 var SESSION_DAYS = { admin: 7, driver: 30 };
 var MAX_FAILS = 5;
 var LOCK_MINUTES = 15;
 var TZ_OFFSET_HOURS = 7; // เวลาประเทศไทย
+var DEFAULT_RADIUS_M = 100; // รัศมีเช็คอินเริ่มต้น (เมตร) แก้ได้ในหน้า ตั้งค่า ของแอป
+var MAX_PHOTOS = 5;          // รูปเช็คอินสูงสุดต่อจุด
 
 var SCHEMA = {
   Settings: ['key', 'value'],
@@ -27,7 +29,8 @@ var SCHEMA = {
          'route_polyline', 'distance_km', 'duration_min',
          'created_at', 'updated_at', 'started_at', 'finished_at'],
   Stops: ['id', 'job_id', 'seq', 'name', 'address', 'lat', 'lng', 'map_url', 'note', 'planned_time',
-          'status', 'arrived_at', 'arrive_lat', 'arrive_lng', 'photo_id', 'photo_url', 'checkin_note'],
+          'status', 'arrived_at', 'arrive_lat', 'arrive_lng', 'photo_id', 'photo_url', 'checkin_note',
+          'photo_urls', 'checkin_dist_m', 'checkin_acc_m'],
   Places: ['id', 'name', 'address', 'lat', 'lng', 'map_url', 'used_count', 'last_used'],
   Sessions: ['token', 'role', 'user_id', 'name', 'created_at', 'expires_at'],
   Log: ['time', 'who', 'action', 'detail']
@@ -69,7 +72,7 @@ function doPost(e) {
 /** เรียกใช้ครั้งแรกจากหน้า Apps Script เพื่อสร้างแผ่นงานและอนุญาตสิทธิ์ */
 function setup() {
   REQ = {};
-  CacheService.getScriptCache().remove('setup_ok_v1');
+  CacheService.getScriptCache().remove('setup_ok_v2');
   ensureSetup_();
   DriveApp.getRootFolder();            // ขอสิทธิ์ Google Drive (เก็บรูปเช็คอิน)
   Maps.newGeocoder();                  // ขอสิทธิ์ค้นหาสถานที่
@@ -88,7 +91,7 @@ function resetAdminPin() {
 
 var ACTIONS = {
   ping: function () {
-    return { app: 'Smart Tracking Jobs', version: APP_VERSION, company: getSetting_('company_name') || '' };
+    return { app: 'Smart Tracking Jobs', version: APP_VERSION, company: getSetting_('company_name') || '', checkin_radius_m: radius_() };
   },
   publicDrivers: function () {
     return rows_('Drivers').filter(function (d) { return d.active === 'true'; })
@@ -178,10 +181,17 @@ function changeAdminPin_(req) {
 
 function saveSettings_(req) {
   auth_(req, 'admin');
-  var name = clean_(req.company_name, 80);
-  if (!name) fail_('กรุณาใส่ชื่อบริษัท');
-  setSetting_('company_name', name);
-  return { company: name };
+  if (req.company_name !== undefined) {
+    var name = clean_(req.company_name, 80);
+    if (!name) fail_('กรุณาใส่ชื่อบริษัท');
+    setSetting_('company_name', name);
+  }
+  if (req.checkin_radius_m !== undefined) {
+    var r = Number(req.checkin_radius_m);
+    if (!isFinite(r) || r < 0 || r > 5000 || Math.round(r) !== r) fail_('รัศมีเช็คอินต้องเป็นตัวเลข 0–5000 เมตร');
+    setSetting_('checkin_radius_m', String(r));
+  }
+  return { company: getSetting_('company_name'), checkin_radius_m: radius_() };
 }
 
 /* ====================== คนขับ ====================== */
@@ -327,7 +337,8 @@ function saveJob_(req) {
         map_url: s.map_url, note: s.note, planned_time: s.planned_time,
         status: o ? o.status : 'pending', arrived_at: o ? o.arrived_at : '',
         arrive_lat: o ? o.arrive_lat : '', arrive_lng: o ? o.arrive_lng : '',
-        photo_id: o ? o.photo_id : '', photo_url: o ? o.photo_url : '', checkin_note: o ? o.checkin_note : ''
+        photo_id: o ? o.photo_id : '', photo_url: o ? o.photo_url : '', checkin_note: o ? o.checkin_note : '',
+        photo_urls: o ? o.photo_urls : '', checkin_dist_m: o ? o.checkin_dist_m : '', checkin_acc_m: o ? o.checkin_acc_m : ''
       });
     });
 
@@ -380,9 +391,16 @@ function deleteJob_(req) {
 
 function checkIn_(req) {
   var s = auth_(req, 'driver');
-  var m = String(req.photo || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
-  if (!m) fail_('กรุณาถ่ายรูปเช็คอิน');
-  if (m[2].length > 10000000) fail_('รูปมีขนาดใหญ่เกินไป');
+  var list = Array.isArray(req.photos) ? req.photos : (req.photo ? [req.photo] : []);
+  if (!list.length) fail_('กรุณาถ่ายรูปเช็คอินอย่างน้อย 1 รูป');
+  if (list.length > MAX_PHOTOS) fail_('แนบรูปได้สูงสุด ' + MAX_PHOTOS + ' รูปต่อจุด');
+  var photos = list.map(function (p) {
+    var m = String(p || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
+    if (!m) fail_('รูปเช็คอินไม่ถูกต้อง กรุณาถ่ายใหม่');
+    if (m[2].length > 10000000) fail_('รูปมีขนาดใหญ่เกินไป');
+    return { ext: m[1], b64: m[2] };
+  });
+  var lat = num_(req.lat), lng = num_(req.lng), acc = num_(req.acc);
 
   return withLock_(function () {
     var stop = rows_('Stops').filter(function (x) { return x.id === String(req.stopId || ''); })[0];
@@ -392,13 +410,28 @@ function checkIn_(req) {
     if (job.status === 'cancelled') fail_('Job นี้ถูกยกเลิกแล้ว');
     if (stop.status === 'arrived') fail_('จุดนี้เช็คอินไปแล้ว');
 
-    var file = savePhoto_(m[1], m[2], job.job_no + '_จุด' + stop.seq);
-    var lat = num_(req.lat), lng = num_(req.lng);
+    // ตรวจรัศมี: ต้องอยู่ใกล้จุดที่ปักหมุดไว้
+    var radius = radius_();
+    var sLat = num_(stop.lat), sLng = num_(stop.lng);
+    var dist = null;
+    if (sLat !== null && sLng !== null) {
+      if (lat !== null && lng !== null) dist = distanceM_(sLat, sLng, lat, lng);
+      if (radius > 0) {
+        if (dist === null) fail_('ต้องเปิดตำแหน่ง (GPS) ก่อนเช็คอิน', 'NO_GPS');
+        if (dist > radius) fail_('ตอนนี้อยู่ห่างจากจุดนัด ' + fmtDist_(dist) + ' ต้องอยู่ในรัศมี ' + radius + ' ม. จึงจะเช็คอินได้', 'OUT_OF_RANGE');
+      }
+    }
+
+    var saved = photos.map(function (p, i) {
+      return savePhoto_(p.ext, p.b64, job.job_no + '_จุด' + stop.seq + '_' + (i + 1));
+    });
     var t = now_();
     update_('Stops', stop, {
       status: 'arrived', arrived_at: t,
       arrive_lat: lat === null ? '' : lat, arrive_lng: lng === null ? '' : lng,
-      photo_id: file.id, photo_url: file.url, checkin_note: clean_(req.note, 300)
+      photo_id: saved[0].id, photo_url: saved[0].url, photo_urls: JSON.stringify(saved),
+      checkin_note: clean_(req.note, 300),
+      checkin_dist_m: dist === null ? '' : dist, checkin_acc_m: acc === null ? '' : Math.round(acc)
     });
     var all = rows_('Stops').filter(function (x) { return x.job_id === job.id; });
     var done = all.filter(function (x) { return x.status === 'arrived'; }).length;
@@ -406,10 +439,25 @@ function checkIn_(req) {
     if (!job.started_at) patch.started_at = t;
     if (patch.status === 'done') patch.finished_at = t;
     update_('Jobs', job, patch);
-    log_(s.name, 'check_in', job.job_no + ' จุด ' + stop.seq + ' ' + stop.name);
+    log_(s.name, 'check_in', job.job_no + ' จุด ' + stop.seq + ' ' + stop.name + ' · ' + saved.length + ' รูป' + (dist === null ? '' : ' · ห่าง ' + dist + ' ม.'));
     return getJobById_(job.id);
   });
 }
+
+function radius_() {
+  var v = getSetting_('checkin_radius_m');
+  return v === '' ? DEFAULT_RADIUS_M : Math.max(0, Number(v) || 0);
+}
+
+function distanceM_(lat1, lng1, lat2, lng2) {
+  var R = 6371000, toR = Math.PI / 180;
+  var dLat = (lat2 - lat1) * toR, dLng = (lng2 - lng1) * toR;
+  var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(lat1 * toR) * Math.cos(lat2 * toR) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+}
+
+function fmtDist_(m) { return m < 1000 ? m + ' ม.' : (Math.round(m / 100) / 10) + ' กม.'; }
 
 function savePhoto_(ext, b64, base) {
   var folder = photoFolder_();
@@ -596,6 +644,7 @@ function getJobById_(id) {
 }
 
 function loadJobs_(filter) {
+  var radius = radius_();
   var drivers = indexBy_(rows_('Drivers'), 'id');
   var jobs = rows_('Jobs').filter(filter);
   var ids = {};
@@ -615,6 +664,7 @@ function loadJobs_(filter) {
     out.stops = stops;
     out.total_count = stops.length;
     out.done_count = stops.filter(function (s) { return s.status === 'arrived'; }).length;
+    out.checkin_radius_m = radius;
     return out;
   }).sort(function (a, b) {
     return (a.date + (a.time || '99:99') + a.job_no) < (b.date + (b.time || '99:99') + b.job_no) ? -1 : 1;
@@ -625,7 +675,12 @@ function stopOut_(s) {
   var o = {};
   SCHEMA.Stops.forEach(function (c) { o[c] = s[c]; });
   o.seq = Number(s.seq) || 0;
-  ['lat', 'lng', 'arrive_lat', 'arrive_lng'].forEach(function (k) { o[k] = num_(s[k]); });
+  ['lat', 'lng', 'arrive_lat', 'arrive_lng', 'checkin_dist_m', 'checkin_acc_m'].forEach(function (k) { o[k] = num_(s[k]); });
+  var photos = [];
+  try { photos = s.photo_urls ? JSON.parse(s.photo_urls) : []; } catch (e) { photos = []; }
+  if (!photos.length && s.photo_url) photos = [{ id: s.photo_id, url: s.photo_url }];
+  o.photos = photos.map(function (p) { return p.url; });
+  delete o.photo_urls;
   return o;
 }
 
@@ -699,7 +754,7 @@ function clearFail_(key) { CacheService.getScriptCache().remove('fail:' + key); 
 
 function ensureSetup_() {
   var cache = CacheService.getScriptCache();
-  if (cache.get('setup_ok_v1')) return;
+  if (cache.get('setup_ok_v2')) return;
   var ss = ss_();
   Object.keys(SCHEMA).forEach(function (name) {
     var cols = SCHEMA[name];
@@ -718,7 +773,8 @@ function ensureSetup_() {
     setSetting_('admin_pin_default', 'true');
     if (!getSetting_('company_name')) setSetting_('company_name', 'บริษัทของฉัน');
   }
-  cache.put('setup_ok_v1', '1', 21600);
+  if (getSetting_('checkin_radius_m') === '') setSetting_('checkin_radius_m', String(DEFAULT_RADIUS_M));
+  cache.put('setup_ok_v2', '1', 21600);
 }
 
 function getSetting_(key) {

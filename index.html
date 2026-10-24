@@ -358,6 +358,30 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 img.img-broken { object-fit: contain !important; background: #EEF1F4; }
 .tbl td.mono { white-space: nowrap; }
 
+/* ---------- เช็คอิน: ตำแหน่งและรูปหลายรูป ---------- */
+.geo-box { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+.geo-box > span { flex: 1 1 200px; min-width: 0; }
+.geo-box svg { flex: none; }
+.geo-box.wait { background: #EEF1F4; color: var(--ink-2); }
+.geo-box.good { background: var(--good-soft); color: var(--good-ink); border: 1px solid #CBE6D2; }
+.geo-box.bad { background: var(--bad-soft); color: var(--bad-ink); border: 1px solid #F3C7C7; }
+.geo-box.info { background: var(--brand-soft); color: var(--brand-dark); }
+.geo-box a { color: inherit; font-weight: 600; }
+.geo-box .muted { color: inherit; opacity: .75; }
+.mini-map { height: 170px; border-radius: 12px; overflow: hidden; background: #E8EDF1; z-index: 0; position: relative; }
+.ph-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ph { position: relative; aspect-ratio: 1 / 1; border-radius: 10px; overflow: hidden; background: #0B1F33; display: flex; align-items: center; justify-content: center; }
+.ph img { width: 100%; height: 100%; object-fit: cover; }
+.ph.loading { background: #EEF1F4; }
+.ph-del { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(11,31,51,.72); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ph-add { aspect-ratio: 1 / 1; border-radius: 10px; border: 2px dashed #AEB9C5; background: #F7F9FB; color: var(--brand-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.ph-add:hover { border-color: var(--brand); background: #F0F7FC; }
+.file-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.tl-photos { display: flex; gap: 8px; flex-wrap: wrap; }
+.tl-photos button { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 10px; overflow: hidden; flex: none; }
+.tl-photos img { width: 112px; height: 84px; object-fit: cover; background: #E8EDF1; }
+.tl-photos img.first { width: 148px; height: 111px; }
+
 </style>
 </head>
 <body>
@@ -645,6 +669,8 @@ window.STJ_CONFIG = {
     if (s.planned_time) h += `<div class="muted small">นัด ${esc(s.planned_time)}</div>`;
     if (s.status === 'arrived') h += `<div style="color:var(--good-ink);font-weight:600" class="small">เช็คอิน ${esc(fmtStamp(s.arrived_at))}</div>`;
     if (s.photo_url) h += `<img src="${esc(s.photo_url)}" alt="รูปเช็คอิน" loading="lazy">`;
+    if (s.photos && s.photos.length > 1) h += `<div class="small muted">+ อีก ${s.photos.length - 1} รูป</div>`;
+    if (s.checkin_dist_m !== null && s.checkin_dist_m !== undefined) h += `<div class="small muted">เช็คอินห่างจุดนัด ${esc(fmtDist(s.checkin_dist_m))}</div>`;
     h += `<div style="margin-top:6px"><a href="${esc(placeUrl(s))}" target="_blank" rel="noopener">เปิดใน Google Maps</a></div>`;
     return h;
   }
@@ -686,12 +712,14 @@ window.STJ_CONFIG = {
     list.forEach((s, i) => {
       const cls = s.status === 'arrived' ? 'done' : (opts.markNext && s === next ? 'next' : '');
       const ic = L.divIcon({ className: '', html: `<div class="pin ${cls}">${esc(s.seq || i + 1)}</div>`, iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14] });
+      if (opts.radius > 0) L.circle([s.lat, s.lng], { radius: opts.radius, color: s.status === 'arrived' ? '#2B7A3B' : brand, weight: 1.5, opacity: 0.7, fillOpacity: 0.07, interactive: false }).addTo(map);
       L.marker([s.lat, s.lng], { icon: ic, title: s.name, zIndexOffset: s === next ? 500 : 0 }).addTo(map).bindPopup(stopPopup(s));
       bounds.extend([s.lat, s.lng]);
       if (opts.showCheckins && s.arrive_lat !== null && s.arrive_lat !== undefined && s.arrive_lng !== null) {
         const cam = L.divIcon({ className: '', html: '<div class="pin-cam"></div>', iconSize: [14, 14], iconAnchor: [7, 7] });
-        L.marker([s.arrive_lat, s.arrive_lng], { icon: cam, title: 'จุดที่ถ่ายรูป' }).addTo(map)
-          .bindPopup(`<b>จุดที่ถ่ายรูปเช็คอิน</b><div class="small muted">${esc(s.name)} · ${esc(fmtStamp(s.arrived_at))}</div>`);
+        L.polyline([[s.lat, s.lng], [s.arrive_lat, s.arrive_lng]], { color: '#7C3AED', weight: 1.5, dashArray: '3 4', interactive: false }).addTo(map);
+        L.marker([s.arrive_lat, s.arrive_lng], { icon: cam, title: 'ตำแหน่งที่เช็คอิน' }).addTo(map)
+          .bindPopup(`<b>ตำแหน่งที่เช็คอิน</b><div class="small muted">${esc(s.name)} · ${esc(fmtStamp(s.arrived_at))}${s.checkin_dist_m !== null && s.checkin_dist_m !== undefined ? ' · ห่างจุดนัด ' + esc(fmtDist(s.checkin_dist_m)) : ''}</div>`);
         bounds.extend([s.arrive_lat, s.arrive_lng]);
       }
     });
@@ -751,7 +779,7 @@ window.STJ_CONFIG = {
   function seed() {
     const t = UI.today();
     const tm = UI.addDays(t, 1);
-    const db = { settings: { company_name: 'บริษัท ตัวอย่างทัวร์ จำกัด', admin_pin: '000000', admin_pin_default: 'true' },
+    const db = { settings: { company_name: 'บริษัท ตัวอย่างทัวร์ จำกัด', admin_pin: '000000', admin_pin_default: 'true', checkin_radius_m: '100' },
       drivers: [], jobs: [], stops: [], places: [], sessions: [] };
     const drv = [['D1', 'สมชาย ใจดี', '111111'], ['D2', 'วิชัย ศรีสุข', '222222'], ['D3', 'ประเสริฐ มั่นคง', '333333'], ['D4', 'อนุชา แก้วมา', '444444']];
     drv.forEach(([id, name, pin]) => db.drivers.push({ id, name, pin, active: 'true', created_at: t + ' 08:00:00' }));
@@ -764,7 +792,8 @@ window.STJ_CONFIG = {
           map_url: `https://www.google.com/maps/search/?api=1&query=${pl.lat},${pl.lng}`, note: '', planned_time: planned,
           status: arrived ? 'arrived' : 'pending', arrived_at: arrived ? date + ' ' + arrived + ':00' : '',
           arrive_lat: arrived ? pl.lat + 0.0003 : null, arrive_lng: arrived ? pl.lng - 0.0002 : null,
-          photo_id: '', photo_url: arrived ? photo(`${pl.name} · ${arrived}`, 200 + i * 35) : '', checkin_note: '' };
+          photo_id: '', photo_url: arrived ? photo(`${pl.name} · ${arrived}`, 200 + i * 35) : '', checkin_note: '',
+          checkin_dist_m: arrived ? 38 : null, checkin_acc_m: arrived ? 12 : null };
         db.stops.push(s);
         return s;
       });
@@ -813,16 +842,18 @@ window.STJ_CONFIG = {
     if (role && s.role !== role) fail('ไม่มีสิทธิ์ใช้งานส่วนนี้', 'FORBIDDEN');
     return s;
   }
+  const radius = (db) => (db.settings.checkin_radius_m === undefined ? 100 : Number(db.settings.checkin_radius_m) || 0);
   function decorate(db, j) {
-    const stops = db.stops.filter((s) => s.job_id === j.id).sort((a, b) => a.seq - b.seq).map((s) => Object.assign({}, s));
+    const stops = db.stops.filter((s) => s.job_id === j.id).sort((a, b) => a.seq - b.seq)
+      .map((s) => Object.assign({}, s, { photos: s.photos || (s.photo_url ? [s.photo_url] : []) }));
     const d = db.drivers.find((x) => x.id === j.driver_id);
     return Object.assign({}, j, { driver_name: d ? d.name : '(ไม่พบคนขับ)', stops,
-      total_count: stops.length, done_count: stops.filter((s) => s.status === 'arrived').length });
+      total_count: stops.length, done_count: stops.filter((s) => s.status === 'arrived').length, checkin_radius_m: radius(db) });
   }
   const sortJobs = (a, b) => ((a.date + (a.time || '99:99') + a.job_no) < (b.date + (b.time || '99:99') + b.job_no) ? -1 : 1);
 
   const A = {
-    ping: (db) => ({ app: 'Smart Tracking Jobs', version: 'demo', company: db.settings.company_name }),
+    ping: (db) => ({ app: 'Smart Tracking Jobs', version: 'demo', company: db.settings.company_name, checkin_radius_m: radius(db) }),
     publicDrivers: (db) => db.drivers.filter((d) => d.active === 'true').map((d) => ({ id: d.id, name: d.name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'th')),
     login(db, req) {
@@ -860,10 +891,17 @@ window.STJ_CONFIG = {
     },
     saveSettings(db, req) {
       auth(db, req, 'admin');
-      const name = clean(req.company_name, 80);
-      if (!name) fail('กรุณาใส่ชื่อบริษัท');
-      db.settings.company_name = name;
-      return { company: name };
+      if (req.company_name !== undefined) {
+        const name = clean(req.company_name, 80);
+        if (!name) fail('กรุณาใส่ชื่อบริษัท');
+        db.settings.company_name = name;
+      }
+      if (req.checkin_radius_m !== undefined) {
+        const r = Number(req.checkin_radius_m);
+        if (!isFinite(r) || r < 0 || r > 5000 || Math.round(r) !== r) fail('รัศมีเช็คอินต้องเป็นตัวเลข 0–5000 เมตร');
+        db.settings.checkin_radius_m = String(r);
+      }
+      return { company: db.settings.company_name, checkin_radius_m: radius(db) };
     },
     listDrivers(db, req) {
       auth(db, req, 'admin');
@@ -985,7 +1023,10 @@ window.STJ_CONFIG = {
     },
     checkIn(db, req) {
       const s = auth(db, req, 'driver');
-      if (!/^data:image\//.test(String(req.photo || ''))) fail('กรุณาถ่ายรูปเช็คอิน');
+      const photos = Array.isArray(req.photos) ? req.photos : (req.photo ? [req.photo] : []);
+      if (!photos.length) fail('กรุณาถ่ายรูปเช็คอินอย่างน้อย 1 รูป');
+      if (photos.length > 5) fail('แนบรูปได้สูงสุด 5 รูปต่อจุด');
+      if (photos.some((p) => !/^data:image\//.test(String(p)))) fail('รูปเช็คอินไม่ถูกต้อง กรุณาถ่ายใหม่');
       const st = db.stops.find((x) => x.id === req.stopId);
       if (!st) fail('ไม่พบสถานที่นี้ใน Job');
       const j = db.jobs.find((x) => x.id === st.job_id);
@@ -993,8 +1034,11 @@ window.STJ_CONFIG = {
       if (j.status === 'cancelled') fail('Job นี้ถูกยกเลิกแล้ว');
       if (st.status === 'arrived') fail('จุดนี้เช็คอินไปแล้ว');
       const now = UI.bkkNow().stamp;
+      // โหมดตัวอย่างไม่บังคับรัศมี (ผู้ทดลองอยู่ไกลจากสถานที่ตัวอย่าง) แต่บันทึกระยะไว้ให้ดู
+      const d = UI.distanceM(st, { lat: num(req.lat), lng: num(req.lng) });
       Object.assign(st, { status: 'arrived', arrived_at: now, arrive_lat: num(req.lat), arrive_lng: num(req.lng),
-        photo_id: 'demo', photo_url: req.photo, checkin_note: clean(req.note, 300) });
+        photo_id: 'demo', photo_url: photos[0], photos, checkin_note: clean(req.note, 300),
+        checkin_dist_m: d, checkin_acc_m: num(req.acc) === null ? null : Math.round(num(req.acc)) });
       const all = db.stops.filter((x) => x.job_id === j.id);
       const done = all.filter((x) => x.status === 'arrived').length;
       if (!j.started_at) j.started_at = now;
@@ -1235,7 +1279,7 @@ window.STJ_CONFIG = {
       <div class="split stretch">
         <section class="main card map-card" aria-label="แผนที่เส้นทาง">
           <div class="card-head"><h2 id="d-maptitle">เส้นทาง</h2>
-            <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:var(--brand)"></i>จุดถัดไป</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่ถ่ายรูป</span></div>
+            <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:var(--brand)"></i>จุดถัดไป</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่เช็คอิน</span></div>
           </div>
           <div class="map" id="d-map"></div>
         </section>
@@ -1282,7 +1326,7 @@ window.STJ_CONFIG = {
       const job = st.jobs.find((j) => j.id === st.sel);
       $('#d-maptitle').innerHTML = job ? `เส้นทาง · <span class="mono">${esc(job.job_no)}</span>` : 'เส้นทาง';
       UI.renderMap($('#d-map'), job ? job.stops : [], {
-        polyline: job && job.route_polyline, showCheckins: true, markNext: true,
+        polyline: job && job.route_polyline, showCheckins: true, markNext: true, radius: job && job.checkin_radius_m,
         emptyText: job ? 'Job นี้ยังไม่มีพิกัดสถานที่' : 'ไม่มี Job ในวันที่เลือก'
       });
     }
@@ -1736,7 +1780,7 @@ window.STJ_CONFIG = {
         <div class="main">
           <section class="card map-card" aria-label="แผนที่">
             <div class="card-head"><h2>เส้นทางและจุดเช็คอิน</h2>
-              <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่ถ่ายรูป</span></div></div>
+              <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่เช็คอิน</span></div></div>
             <div class="map" id="j-map"></div>
           </section>
           <section class="card card-pad" aria-label="สถานที่และการเช็คอิน">
@@ -1766,7 +1810,7 @@ window.STJ_CONFIG = {
         </aside>
       </div>`);
 
-    UI.renderMap($('#j-map'), job.stops, { polyline: job.route_polyline, showCheckins: true, markNext: job.status !== 'done' });
+    UI.renderMap($('#j-map'), job.stops, { polyline: job.route_polyline, showCheckins: true, markNext: job.status !== 'done', radius: job.checkin_radius_m });
     $$('[data-photo]').forEach((b) => b.addEventListener('click', () => UI.showPhoto(b.dataset.photo, b.dataset.cap)));
     const c = $('[data-cancel]');
     if (c) c.addEventListener('click', async () => {
@@ -1798,7 +1842,16 @@ window.STJ_CONFIG = {
     } else if (job.status !== 'cancelled' && isOverdue(job, s)) {
       timing += ' <span class="tag warn">ยังไม่เช็คอิน</span>';
     }
-    const dist = done ? UI.distanceM(s, { lat: s.arrive_lat, lng: s.arrive_lng }) : null;
+    const dist = done ? (s.checkin_dist_m !== null && s.checkin_dist_m !== undefined ? s.checkin_dist_m : UI.distanceM(s, { lat: s.arrive_lat, lng: s.arrive_lng })) : null;
+    const radius = Number(job.checkin_radius_m) || 0;
+    const photos = s.photos && s.photos.length ? s.photos : (s.photo_url ? [s.photo_url] : []);
+    let distTag = '';
+    if (done && dist !== null) {
+      const inside = radius > 0 ? dist <= radius : dist <= 300;
+      distTag = `<span class="tag ${inside ? 'good' : 'warn'}">${icon(inside ? 'check' : 'pin', 12)}เช็คอินห่างจุดนัด ${UI.fmtDist(dist)}${radius > 0 ? (inside ? ` · ในรัศมี ${radius} ม.` : ` · นอกรัศมี ${radius} ม.`) : ''}</span>`;
+    } else if (done && s.arrive_lat === null) {
+      distTag = `<span class="tag">${UI.hasXY(s) ? 'ไม่มีตำแหน่งตอนเช็คอิน' : 'จุดนี้ไม่ได้ปักหมุด'}</span>`;
+    }
     return `<div class="tl-item ${done ? 'done' : ''}">
       <div class="num ${done ? 'done' : 'idle'}">${done ? icon('check', 16) : s.seq}</div>
       <div class="body">
@@ -1806,13 +1859,15 @@ window.STJ_CONFIG = {
         ${s.address ? `<span class="muted small">${esc(s.address)}</span>` : ''}
         <span class="small">${timing}</span>
         ${s.note ? `<span class="small muted">${icon('note', 14)} ${esc(s.note)}</span>` : ''}
-        ${done ? `<div class="tl-photo">
-            ${s.photo_url ? `<button type="button" data-photo="${esc(s.photo_url)}" data-cap="${esc(s.seq + '. ' + s.name)}" aria-label="ดูรูปเช็คอิน ${esc(s.name)}"><img src="${esc(s.photo_url)}" alt="" loading="lazy"></button>` : ''}
-            <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;min-width:0">
-              ${s.checkin_note ? `<span>“${esc(s.checkin_note)}”</span>` : ''}
-              ${dist !== null ? `<span class="tag ${dist > 300 ? 'warn' : 'good'}">ถ่ายรูปห่างจากจุด ${UI.fmtDist(dist)}</span>` : (s.arrive_lat === null ? '<span class="tag">ไม่มีตำแหน่งตอนถ่ายรูป</span>' : '')}
-              ${s.arrive_lat !== null ? `<a class="small" href="https://www.google.com/maps/search/?api=1&query=${s.arrive_lat},${s.arrive_lng}" target="_blank" rel="noopener">ดูตำแหน่งที่ถ่ายรูป</a>` : ''}
-            </div></div>` : ''}
+        ${done ? `<div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+            ${photos.length ? `<div class="tl-photos">${photos.map((u, i) => `<button type="button" data-photo="${esc(u)}" data-cap="${esc(s.seq + '. ' + s.name + ' · รูปที่ ' + (i + 1) + '/' + photos.length)}" aria-label="ดูรูปเช็คอินที่ ${i + 1} ของ ${esc(s.name)}"><img src="${esc(u)}" alt="" loading="lazy" class="${i === 0 ? 'first' : ''}"></button>`).join('')}</div>` : ''}
+            <div style="display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:14px">
+              ${distTag}
+              ${photos.length > 1 ? `<span class="tag">${photos.length} รูป</span>` : ''}
+              ${s.arrive_lat !== null ? `<a class="small" href="https://www.google.com/maps/search/?api=1&query=${s.arrive_lat},${s.arrive_lng}" target="_blank" rel="noopener">ดูตำแหน่งที่เช็คอิน</a>` : ''}
+            </div>
+            ${s.checkin_note ? `<span style="font-size:14px">“${esc(s.checkin_note)}”</span>` : ''}
+          </div>` : ''}
         <a class="small" href="${esc(UI.placeUrl(s))}" target="_blank" rel="noopener">ดูสถานที่ใน Google Maps</a>
       </div></div>`;
   }
@@ -1915,6 +1970,15 @@ window.STJ_CONFIG = {
           <label class="field"><span>ชื่อบริษัท (แสดงในหน้าเข้าสู่ระบบ)</span><input class="input" name="company" maxlength="80" value="${esc(s.company || '')}" required></label>
           <button class="btn btn-primary" type="submit">บันทึก</button>
         </form>
+        <form class="card card-pad" id="st-radius" style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="font-size:18px">การเช็คอิน</h2>
+          <label class="field"><span>รัศมีที่อนุญาตให้เช็คอิน (เมตร จากจุดที่ปักหมุด)</span>
+            <input class="input" type="number" name="radius" min="0" max="5000" step="10" inputmode="numeric" value="" placeholder="100" required>
+            <span class="hint">คนขับต้องอยู่ในรัศมีนี้ถึงจะถ่ายรูปเช็คอินได้ · ใส่ 0 = ไม่ตรวจรัศมี · แนะนำ 100–200 ม. (GPS ในตึกอาจคลาดเคลื่อน 20–50 ม.)</span></label>
+          <div class="actions">${[50, 100, 200, 500].map((r) => `<button type="button" class="btn btn-sm" data-r="${r}">${r} ม.</button>`).join('')}</div>
+          <span class="hint muted small">ถ่ายรูปได้สูงสุด 5 รูปต่อจุด · ระบบบันทึกตำแหน่งและระยะห่างจากจุดนัดทุกครั้ง</span>
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </form>
         <form class="card card-pad" id="st-pin" style="display:flex;flex-direction:column;gap:14px" autocomplete="off">
           <h2 style="font-size:18px">เปลี่ยน PIN แอดมิน</h2>
           <label class="field"><span>PIN เดิม</span><input class="input mono" type="password" name="old" inputmode="numeric" maxlength="6" required></label>
@@ -1950,7 +2014,13 @@ window.STJ_CONFIG = {
 
     $('[data-copy]').addEventListener('click', () => UI.copyText(link));
     const ping = async () => {
-      try { const p = await API.call('ping'); $('#st-ver').textContent = p.version; return p; }
+      try {
+        const p = await API.call('ping');
+        $('#st-ver').textContent = p.version;
+        const ri = $('#st-radius [name=radius]');
+        if (ri && ri.value === '') ri.value = p.checkin_radius_m === undefined ? 100 : p.checkin_radius_m;
+        return p;
+      }
       catch (e) { $('#st-ver').textContent = 'เชื่อมต่อไม่ได้'; throw e; }
     };
     ping().catch(() => {});
@@ -1966,6 +2036,17 @@ window.STJ_CONFIG = {
       App.state.setupFrom = API.isDemo() ? '' : API.apiUrl();
       API.clearSession();
       location.hash = '#/setup';
+    });
+    $$('#st-radius [data-r]').forEach((b) => b.addEventListener('click', () => { $('#st-radius [name=radius]').value = b.dataset.r; }));
+    $('#st-radius').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type=submit]');
+      busy(btn, true);
+      try {
+        const r = await API.call('saveSettings', { checkin_radius_m: Number(e.target.radius.value) });
+        toast(r.checkin_radius_m ? `บันทึกแล้ว · รัศมีเช็คอิน ${r.checkin_radius_m} ม.` : 'บันทึกแล้ว · ไม่ตรวจรัศมี', 'good');
+      } catch (err) { toast(err.message, 'bad'); }
+      busy(btn, false);
     });
     $('#st-company').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2077,8 +2158,7 @@ window.STJ_CONFIG = {
         <a class="icon-btn" href="#/driver" aria-label="กลับไปหน้างานของฉัน">${icon('back', 22)}</a>
         <div style="flex:1 1 auto;min-width:0" id="j-head"><h1 style="font-size:18px">กำลังโหลด…</h1></div>
         <button type="button" class="icon-btn" id="j-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>
-      </div>`) + `<main class="d-body" id="j-body">${loading()}</main>
-      <input type="file" accept="image/*" capture="environment" id="cam" class="hidden" aria-hidden="true" tabindex="-1">`);
+      </div>`) + `<main class="d-body" id="j-body">${loading()}</main>`);
 
     async function load() {
       try { st.job = await API.call('getJob', { id }); draw(); }
@@ -2116,7 +2196,7 @@ window.STJ_CONFIG = {
             <a class="btn btn-lg" href="${esc(UI.routeUrl(pending))}" target="_blank" rel="noopener">${icon('route')}ทั้งเส้นทาง</a>
           </div>
           <button type="button" class="btn btn-primary btn-block big-check" id="btn-check">${icon('camera', 24)}ถึงแล้ว · ถ่ายรูปเช็คอิน</button>
-          <div class="muted small" style="text-align:center">ระบบบันทึกเวลาและตำแหน่งตอนถ่ายรูป</div>
+          <div class="muted small" style="text-align:center">${radiusText(j, cur)}</div>
         </section>`;
       }
 
@@ -2136,48 +2216,124 @@ window.STJ_CONFIG = {
       UI.renderMap($('#j-map'), j.stops, { polyline: j.route_polyline, markNext: true });
       $$('[data-focus]').forEach((b) => b.addEventListener('click', () => { st.focus = b.dataset.focus; draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
       const btn = $('#btn-check');
-      if (btn) btn.addEventListener('click', () => { st.target = cur; const c = $('#cam'); c.value = ''; c.click(); });
+      if (btn) btn.addEventListener('click', () => openCheckin(cur));
     }
 
-    $('#cam').addEventListener('change', async (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file || !st.target) return;
-      openCheckin(st.target, file);
-    });
-
-    async function openCheckin(stop, file) {
-      const geo = getLocation();
+    function openCheckin(stop) {
+      const job = st.job;
+      const radius = Number(job.checkin_radius_m) || 0;
+      const pinned = UI.hasXY(stop);
+      const demo = API.isDemo();
+      const ck = { photos: [], pos: null, geoErr: '', watch: null, map: null, me: null, sending: false };
       const m = UI.modal({
         title: `เช็คอิน · ${stop.name}`,
-        body: `<div id="ci-img" class="loading-block" style="background:#0B1F33;border-radius:12px;color:#C9D5E2"><span class="spinner"></span>กำลังเตรียมรูป…</div>
-          <div class="small muted" id="ci-geo">${icon('pin', 14)} กำลังหาตำแหน่ง…</div>
+        body: `<div class="geo-box wait" id="ci-geo" role="status"></div>
+          ${pinned && window.L ? '<div class="mini-map" id="ci-map" aria-label="แผนที่ตำแหน่งปัจจุบันเทียบกับจุดนัด"></div>' : ''}
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><b>รูปเช็คอิน</b><span class="small muted" id="ci-count"></span></div>
+            <div class="ph-grid" id="ci-photos"></div>
+            <input type="file" accept="image/*" capture="environment" multiple id="ci-cam" class="file-hidden" tabindex="-1" aria-hidden="true">
+          </div>
           <label class="field"><span>หมายเหตุ (ถ้ามี)</span><textarea class="input" id="ci-note" maxlength="300" rows="2" placeholder="เช่น ลูกค้าขึ้นรถครบ 3 คน"></textarea></label>`,
-        foot: `<button type="button" class="btn btn-lg" data-retake>${icon('camera', 18)}ถ่ายใหม่</button><button type="button" class="btn btn-good btn-lg" data-ok disabled>${icon('check', 20)}ยืนยันเช็คอิน</button>`
+        foot: `<button type="button" class="btn btn-lg" data-close>ยกเลิก</button><button type="button" class="btn btn-good btn-lg" data-ok disabled>${icon('check', 20)}ยืนยันเช็คอิน</button>`,
+        onClose: () => {
+          if (ck.watch !== null && navigator.geolocation) navigator.geolocation.clearWatch(ck.watch);
+          if (ck.map) ck.map.remove();
+        }
       });
-      let photo = null, pos = null;
-      const ok = m.el.querySelector('[data-ok]');
-      geo.then((p) => {
-        pos = p;
-        const el = m.el.querySelector('#ci-geo');
-        if (el) el.innerHTML = p ? `${icon('pin', 14)} ได้ตำแหน่งแล้ว (แม่นยำ ±${Math.round(p.acc)} ม.)` : `${icon('pin', 14)} ไม่ได้ตำแหน่ง — ยังเช็คอินได้ (เปิดการเข้าถึงตำแหน่งเพื่อความแม่นยำ)`;
-      });
-      try {
-        photo = await processPhoto(file, [stop.name, `${UI.fmtDate(UI.today(), { noDay: true })} ${UI.bkkNow().time} น. · ${st.job.job_no} · ${st.job.plate}`], API.isDemo() ? 560 : 1280);
-        m.el.querySelector('#ci-img').outerHTML = `<img class="photo-preview" src="${photo}" alt="รูปเช็คอินที่ถ่าย">`;
-        ok.disabled = false;
-      } catch (err) {
-        m.el.querySelector('#ci-img').outerHTML = `<div class="banner bad">อ่านรูปไม่ได้ กรุณาถ่ายใหม่</div>`;
+      const $m = (q) => m.el.querySelector(q);
+      const ok = $m('[data-ok]');
+
+      // ---- ตำแหน่งปัจจุบัน (อัปเดตตลอดขณะเปิดหน้านี้) ----
+      function startWatch() {
+        ck.geoErr = '';
+        if (!navigator.geolocation) { ck.geoErr = 'อุปกรณ์นี้ไม่รองรับการหาตำแหน่ง'; return refresh(); }
+        if (ck.watch !== null) navigator.geolocation.clearWatch(ck.watch);
+        ck.watch = navigator.geolocation.watchPosition(
+          (p) => { ck.pos = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }; ck.geoErr = ''; refresh(); },
+          (err) => { ck.geoErr = err.code === 1 ? 'ยังไม่ได้อนุญาตให้เข้าถึงตำแหน่ง — เปิดสิทธิ์ตำแหน่ง (Location) ให้เบราว์เซอร์ แล้วกด "หาตำแหน่งอีกครั้ง"' : 'หาตำแหน่งไม่ได้ — ไปที่โล่ง แล้วกด "หาตำแหน่งอีกครั้ง"'; refresh(); },
+          { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
+        );
+        refresh();
       }
-      m.el.querySelector('[data-retake]').addEventListener('click', () => { m.close(); const c = $('#cam'); c.value = ''; c.click(); });
+      function dist() { return ck.pos && pinned ? UI.distanceM(stop, ck.pos) : null; }
+      function geoState() {
+        const d = dist();
+        if (!pinned) return { cls: 'info', ok: true, html: `${icon('pin', 18)}<span>จุดนี้ไม่ได้ปักหมุดพิกัด — ระบบบันทึกตำแหน่งที่ถ่ายรูปไว้ แต่ไม่ตรวจรัศมี${ck.pos ? ` <span class="muted">(ได้ตำแหน่งแล้ว ±${Math.round(ck.pos.acc)} ม.)</span>` : ''}</span>` };
+        if (ck.geoErr && !ck.pos) return { cls: 'bad', ok: radius === 0 || demo, html: `${icon('pin', 18)}<span>${esc(ck.geoErr)}${demo ? '<br><b>โหมดตัวอย่าง:</b> เช็คอินได้เพื่อทดลอง' : ''}</span>`, retry: true };
+        if (!ck.pos) return { cls: 'wait', ok: false, html: `<span class="spinner sm"></span><span>กำลังหาตำแหน่งปัจจุบัน…</span>` };
+        const accTxt = `ความแม่นยำ ±${Math.round(ck.pos.acc)} ม.`;
+        if (radius === 0) return { cls: 'good', ok: true, html: `${icon('pin', 18)}<span>อยู่ห่างจากจุดนัด <b>${UI.fmtDist(d)}</b> <span class="muted">· ${accTxt}</span></span>` };
+        if (d <= radius) return { cls: 'good', ok: true, html: `${icon('check', 18)}<span>อยู่ห่างจากจุดนัด <b>${UI.fmtDist(d)}</b> · อยู่ในรัศมี ${radius} ม. <span class="muted">· ${accTxt}</span></span>` };
+        return { cls: 'bad', ok: demo, retry: true,
+          html: `${icon('pin', 18)}<span>อยู่ห่างจากจุดนัด <b>${UI.fmtDist(d)}</b> — ต้องอยู่ในรัศมี <b>${radius} ม.</b> จึงจะเช็คอินได้<br><span class="small">${accTxt}${ck.pos.acc > radius ? ' · สัญญาณ GPS ยังไม่แม่น ลองออกไปที่โล่งสักครู่' : ''} · <a href="${esc(UI.navUrl(stop))}" target="_blank" rel="noopener">นำทางไปจุดนัด</a></span>${demo ? '<br><b>โหมดตัวอย่าง:</b> อนุญาตให้เช็คอินนอกรัศมีเพื่อทดลอง' : ''}</span>` };
+      }
+      function refresh() {
+        const g = geoState();
+        const box = $m('#ci-geo');
+        if (!box) return;
+        box.className = 'geo-box ' + g.cls;
+        box.innerHTML = g.html + (g.retry ? '<button type="button" class="btn btn-sm" data-regeo>หาตำแหน่งอีกครั้ง</button>' : '');
+        const rb = box.querySelector('[data-regeo]');
+        if (rb) rb.addEventListener('click', () => { ck.pos = null; startWatch(); });
+        drawMiniMap();
+        ok.disabled = ck.sending || !ck.photos.length || !g.ok;
+        ok.title = !ck.photos.length ? 'ถ่ายรูปอย่างน้อย 1 รูป' : (!g.ok ? 'ต้องอยู่ในรัศมีจุดนัด' : '');
+      }
+      function drawMiniMap() {
+        const el = $m('#ci-map');
+        if (!el) return;
+        if (!ck.map) {
+          ck.map = L.map(el, { zoomControl: false, attributionControl: false, dragging: true, scrollWheelZoom: false });
+          L.tileLayer(UI.CONFIG.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(ck.map);
+          if (radius > 0) L.circle([stop.lat, stop.lng], { radius, color: '#2B7A3B', weight: 2, fillOpacity: 0.1 }).addTo(ck.map);
+          L.marker([stop.lat, stop.lng], { icon: L.divIcon({ className: '', html: `<div class="pin">${esc(stop.seq)}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }) }).addTo(ck.map);
+          ck.map.setView([stop.lat, stop.lng], 16);
+          setTimeout(() => ck.map && ck.map.invalidateSize(), 80);
+        }
+        if (ck.pos) {
+          const ll = [ck.pos.lat, ck.pos.lng];
+          if (!ck.me) ck.me = L.circleMarker(ll, { radius: 8, color: '#fff', weight: 3, fillColor: '#7C3AED', fillOpacity: 1 }).addTo(ck.map);
+          else ck.me.setLatLng(ll);
+          ck.map.fitBounds(L.latLngBounds([[stop.lat, stop.lng], ll]).pad(0.6), { maxZoom: 17 });
+        }
+      }
+
+      // ---- รูปเช็คอิน (หลายรูป) ----
+      function drawPhotos() {
+        const grid = $m('#ci-photos');
+        grid.innerHTML = ck.photos.map((p, i) => `<div class="ph"><img src="${p}" alt="รูปที่ ${i + 1}"><button type="button" class="ph-del" data-del="${i}" aria-label="ลบรูปที่ ${i + 1}">${icon('x', 16)}</button></div>`).join('') +
+          (ck.photos.length < MAX_PHOTOS ? `<label for="ci-cam" class="ph-add" role="button" tabindex="0">${icon('camera', 26)}<span>${ck.photos.length ? 'เพิ่มรูป' : 'ถ่ายรูป'}</span></label>` : '');
+        $m('#ci-count').textContent = `${ck.photos.length}/${MAX_PHOTOS} รูป`;
+        grid.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => { ck.photos.splice(Number(b.dataset.del), 1); drawPhotos(); refresh(); }));
+        const add = grid.querySelector('.ph-add');
+        if (add) add.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $m('#ci-cam').click(); } });
+      }
+      $m('#ci-cam').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []).slice(0, MAX_PHOTOS - ck.photos.length);
+        e.target.value = '';
+        for (const f of files) {
+          const holder = document.createElement('div');
+          holder.className = 'ph loading';
+          holder.innerHTML = '<span class="spinner sm"></span>';
+          $m('#ci-photos').insertBefore(holder, $m('.ph-add'));
+          try {
+            const d = dist();
+            const line2 = `${UI.fmtDate(UI.today(), { noDay: true })} ${UI.bkkNow().time} น. · ${job.job_no} · ${job.plate}${d !== null ? ' · ห่างจุด ' + UI.fmtDist(d) : ''}`;
+            ck.photos.push(await processPhoto(f, [stop.name, line2], demo ? 560 : 1280));
+          } catch (err) { toast('อ่านรูปไม่ได้ กรุณาถ่ายใหม่', 'bad'); }
+        }
+        drawPhotos(); refresh();
+      });
+
       ok.addEventListener('click', async () => {
-        if (!photo) return;
-        busy(ok, true, 'กำลังส่งรูป…');
-        m.el.querySelector('[data-retake]').disabled = true;
-        const p = pos || (await Promise.race([geo, new Promise((r) => setTimeout(() => r(null), 3000))]));
+        if (ok.disabled) return;
+        ck.sending = true;
+        busy(ok, true, ck.photos.length > 1 ? `กำลังส่ง ${ck.photos.length} รูป…` : 'กำลังส่งรูป…');
         try {
           st.job = await API.call('checkIn', {
-            stopId: stop.id, photo, note: m.el.querySelector('#ci-note').value.trim(),
-            lat: p ? p.lat : null, lng: p ? p.lng : null
+            stopId: stop.id, photos: ck.photos, note: $m('#ci-note').value.trim(),
+            lat: ck.pos ? ck.pos.lat : null, lng: ck.pos ? ck.pos.lng : null, acc: ck.pos ? ck.pos.acc : null
           });
           m.close();
           st.focus = null;
@@ -2186,10 +2342,14 @@ window.STJ_CONFIG = {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
           toast(err.message, 'bad');
+          ck.sending = false;
           busy(ok, false);
-          m.el.querySelector('[data-retake]').disabled = false;
+          refresh();
         }
       });
+
+      drawPhotos();
+      startWatch();
     }
 
     $('#j-refresh').addEventListener('click', load);
@@ -2197,15 +2357,11 @@ window.STJ_CONFIG = {
   };
 
   /* ---------- ตำแหน่งและรูป ---------- */
-  function getLocation() {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) return resolve(null);
-      navigator.geolocation.getCurrentPosition(
-        (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
-        () => resolve(null),
-        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-      );
-    });
+  const MAX_PHOTOS = 5;
+  function radiusText(job, stop) {
+    const r = Number(job.checkin_radius_m) || 0;
+    if (!UI.hasXY(stop)) return 'ถ่ายรูปได้สูงสุด 5 รูป · ระบบบันทึกเวลาและตำแหน่งตอนเช็คอิน';
+    return r > 0 ? `ต้องอยู่ในรัศมี ${r} ม. จากจุดนัด · ถ่ายรูปได้สูงสุด 5 รูป` : 'ถ่ายรูปได้สูงสุด 5 รูป · ระบบบันทึกเวลาและตำแหน่งตอนเช็คอิน';
   }
 
   async function loadImage(file) {
