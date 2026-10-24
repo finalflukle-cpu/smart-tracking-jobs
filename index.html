@@ -1213,26 +1213,33 @@ window.STJ_CONFIG = {
   'use strict';
   const CONFIG = window.STJ_CONFIG || {};
   const K = { api: 'stj_api_url', demo: 'stj_demo_mode', sess: 'stj_session' };
+  const mem = {}; // สำรองเมื่อเบราว์เซอร์ไม่ให้เก็บข้อมูล (เช่น โหมดส่วนตัว / เบราว์เซอร์ในแอปแชท)
   const store = {
-    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* โหมดส่วนตัว */ } },
-    del(k) { try { localStorage.removeItem(k); } catch (e) { /* โหมดส่วนตัว */ } }
+    get(k) { try { const v = localStorage.getItem(k); return v === null && k in mem ? mem[k] : v; } catch (e) { return k in mem ? mem[k] : null; } },
+    set(k, v) { mem[k] = v; try { localStorage.setItem(k, v); } catch (e) { /* ใช้ค่าในหน่วยความจำแทน */ } },
+    del(k) { delete mem[k]; try { localStorage.removeItem(k); } catch (e) { /* ไม่เป็นไร */ } }
   };
 
-  // รับลิงก์ระบบจาก ?api=... (ลิงก์ที่แอดมินส่งให้คนขับ) หรือ ?demo=1
-  (function readParams() {
+  // ลิงก์ระบบหลังบ้านจาก ?api=... ในลิงก์ (เก็บไว้ในลิงก์ตลอด เพื่อให้บุ๊กมาร์กและไอคอนบนหน้าจอหลักใช้ได้เสมอ)
+  function urlParam(name) {
+    let v = new URLSearchParams(location.search).get(name);
+    if (!v && location.hash.indexOf('?') > -1) v = new URLSearchParams(location.hash.split('?')[1]).get(name);
+    return v ? v.trim() : '';
+  }
+  function setUrlParam(name, value) {
     const p = new URLSearchParams(location.search);
-    let changed = false;
-    if (p.get('api')) { store.set(K.api, p.get('api').trim()); store.del(K.demo); p.delete('api'); changed = true; }
-    if (p.get('demo') === '1') { store.set(K.demo, '1'); p.delete('demo'); changed = true; }
-    if (changed) {
-      const q = p.toString();
-      history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
-    }
+    if (value) p.set(name, value); else p.delete(name);
+    const q = p.toString();
+    history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+  }
+  (function readParams() {
+    const a = urlParam('api');
+    if (a) { store.set(K.api, a); store.del(K.demo); }
+    if (urlParam('demo') === '1') store.set(K.demo, '1');
   })();
 
   const isDemo = () => store.get(K.demo) === '1';
-  const apiUrl = () => (CONFIG.API_URL || store.get(K.api) || '').trim();
+  const apiUrl = () => (CONFIG.API_URL || (isDemo() ? '' : urlParam('api')) || store.get(K.api) || '').trim();
   const scope = () => (isDemo() ? 'demo' : apiUrl());
 
   function session() {
@@ -1316,9 +1323,9 @@ window.STJ_CONFIG = {
     call, testUrl, isDemo, apiUrl, session, setSession, patchSession, clearSession, ApiError,
     ready: () => isDemo() || !!apiUrl(),
     lockedUrl: () => !!CONFIG.API_URL,
-    setApiUrl(url) { store.set(K.api, url.trim()); store.del(K.demo); clearSession(); },
-    enableDemo() { store.set(K.demo, '1'); clearSession(); },
-    disableDemo() { store.del(K.demo); clearSession(); },
+    setApiUrl(url) { store.set(K.api, url.trim()); store.del(K.demo); setUrlParam('demo', ''); if (!CONFIG.API_URL) setUrlParam('api', url.trim()); clearSession(); },
+    enableDemo() { store.set(K.demo, '1'); setUrlParam('api', ''); clearSession(); },
+    disableDemo() { store.del(K.demo); setUrlParam('demo', ''); clearSession(); },
     driverLink() {
       const base = location.origin + location.pathname;
       return isDemo() ? base + '?demo=1#/login' : base + (CONFIG.API_URL ? '' : '?api=' + encodeURIComponent(apiUrl())) + '#/login';
