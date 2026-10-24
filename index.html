@@ -46,7 +46,10 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
-body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; overflow-x: clip; }
+/* แตะครั้งเดียวทำงานทันที (ไม่รอดูว่าจะแตะสองครั้งเพื่อซูมหรือไม่) */
+a, button, input, select, textarea, label, summary, [role="button"] { touch-action: manipulation; }
+html.modal-open, html.modal-open body { overflow: hidden; }
 a { color: var(--brand); }
 a:hover { color: var(--brand-dark); }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -89,8 +92,8 @@ h1, h2, h3 { margin: 0; line-height: 1.3; }
 @media (max-width: 760px) {
   .topbar-in { flex-wrap: wrap; padding: 8px 12px 0; gap: 8px 12px; min-height: 0; }
   .brand { flex: 1 1 auto; }
-  .nav { order: 3; flex-basis: 100%; padding-bottom: 6px; }
-  .nav a { padding: 8px 12px; font-size: 14px; }
+  .nav { order: 3; flex-basis: 100%; padding-bottom: 6px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+  .nav a { padding: 6px 2px; font-size: 12px; flex-direction: column; gap: 2px; justify-content: center; text-align: center; }
   .top-user .who { display: none; }
 }
 
@@ -137,10 +140,11 @@ h1, h2, h3 { margin: 0; line-height: 1.3; }
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .field > span, .field > label { font-size: 14px; font-weight: 600; }
 .field .hint { font-size: 13px; color: var(--muted); font-weight: 400; }
-.input, select.input, textarea.input { width: 100%; padding: 10px 12px; min-height: 46px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font-weight: 400; }
+.input, select.input, textarea.input { width: 100%; padding: 10px 12px; min-height: 46px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font-weight: 400; font-size: 16px; }
+/* iPhone จะซูมเข้าเองถ้าตัวอักษรในช่องกรอกเล็กกว่า 16px — จึงใช้ 16px ทุกช่อง */
 textarea.input { min-height: 80px; resize: vertical; }
 .input:focus, .btn:focus-visible, .icon-btn:focus-visible, a:focus-visible { outline: 3px solid rgba(14,107,168,.35); outline-offset: 1px; border-color: var(--brand); }
-.input.sm { min-height: 38px; padding: 6px 10px; font-size: 14px; }
+.input.sm { min-height: 40px; padding: 6px 10px; font-size: 16px; }
 .grid { display: grid; gap: 16px; }
 .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -151,7 +155,7 @@ textarea.input { min-height: 80px; resize: vertical; }
 .check input { width: 18px; height: 18px; }
 
 /* ---------- ตัวเลขสรุป ---------- */
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
 @media (max-width: 760px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 .tile { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
 .tile .k { color: var(--muted); font-size: 14px; }
@@ -317,25 +321,30 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 
 .keypad button:hover { background: #E4E9EE; }
 .keypad button:active { background: #D6DDE4; }
 .keypad button.fn { background: transparent; font-size: 15px; color: var(--muted); }
+.keypad.busy { opacity: .45; pointer-events: none; }
 .who-chip { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #F4F6F9; border-radius: 12px; padding: 8px 8px 8px 14px; }
 
 /* ---------- หน้าต่างลอย ---------- */
 .modal-bg { position: fixed; inset: 0; background: rgba(11,31,51,.55); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .15s; }
-.modal { background: #fff; border-radius: 18px; width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; display: flex; flex-direction: column; }
+.modal { background: #fff; border-radius: 18px; width: 100%; max-width: 520px; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: hidden; display: flex; flex-direction: column; }
 .modal.wide { max-width: 860px; }
-.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 8px; }
-.modal-head h3 { font-size: 19px; }
-.modal-body { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
-.modal-foot { padding: 0 18px 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 12px 8px 18px; flex: none; }
+.modal-head h3 { font-size: 19px; min-width: 0; overflow-wrap: anywhere; }
+.modal-body { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; flex: 1 1 auto; min-height: 0; }
+.modal-foot { padding: 12px 18px 16px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; flex: none; border-top: 1px solid var(--line); background: #fff; }
 @media (max-width: 560px) {
   .modal-bg { align-items: flex-end; padding: 0; }
-  .modal { border-radius: 20px 20px 0 0; max-height: 92vh; padding-bottom: env(safe-area-inset-bottom); }
-  .modal-foot .btn { flex: 1 1 auto; }
+  .modal { border-radius: 20px 20px 0 0; max-width: none; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); }
+  .modal.full { border-radius: 0; height: 100vh; height: 100dvh; max-height: none; padding-top: env(safe-area-inset-top); }
+  .modal-body { padding: 6px 16px 16px; }
+  .modal-foot { padding: 10px 16px calc(12px + env(safe-area-inset-bottom)); }
+  .modal-foot .btn { flex: 1 1 0; min-height: 50px; font-size: 16px; }
 }
 @keyframes fade { from { opacity: 0; } }
 .photo-preview { width: 100%; max-height: 52vh; object-fit: contain; background: #0B1F33; border-radius: 12px; }
 
 /* ---------- แจ้งเตือน ---------- */
+body:has(.d-nav) #toasts { bottom: calc(96px + env(safe-area-inset-bottom)); }
 #toasts { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 8px; align-items: center; width: calc(100% - 32px); max-width: 460px; pointer-events: none; }
 .toast { background: var(--navy); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: up .2s; pointer-events: auto; max-width: 100%; }
 .toast.bad { background: var(--bad); }
@@ -402,6 +411,139 @@ img.img-broken { object-fit: contain !important; background: #EEF1F4; }
 .pick-card .t { font-weight: 600; }
 .pick-card .s { font-size: 13px; color: var(--muted); }
 .name-btn .avatar-img { width: 32px; height: 32px; }
+
+/* ====================== v1.3: มือถือใช้ง่ายขึ้น ====================== */
+.link-btn { border: 0; background: none; color: var(--brand); font-weight: 600; font-size: 13px; padding: 4px 2px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; min-height: 32px; }
+.link-btn:hover { color: var(--brand-dark); text-decoration: underline; }
+.src-ico { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-soft); color: var(--brand-dark); display: flex; align-items: center; justify-content: center; flex: none; }
+.src-ico.saved { background: #EEF1F4; color: var(--muted); }
+.switch-row { display: flex; gap: 12px; align-items: flex-start; cursor: pointer; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.switch-row input { width: 22px; height: 22px; margin: 2px 0 0; flex: none; accent-color: var(--brand); }
+.switch-row > span { display: flex; flex-direction: column; gap: 2px; }
+.switch-row .hint { font-size: 13px; color: var(--muted); }
+.pick-map { height: 58vh; min-height: 280px; border-radius: 12px; overflow: hidden; background: #E8EDF1; position: relative; z-index: 0; }
+.modal.full .pick-map { flex: 1 1 auto; height: auto; }
+.car-pin { display: inline-flex; align-items: center; gap: 5px; background: var(--navy); color: #fff; border: 2px solid #fff; border-radius: 999px; padding: 3px 9px 3px 6px; font: 600 12px var(--font); white-space: nowrap; box-shadow: 0 2px 8px rgba(11,31,51,.4); transform: translate(-4px, -4px); }
+.car-pin.stale { background: #6B7785; }
+.crew-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; padding: 16px; }
+.crew-card { border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; background: #fff; }
+.crew-card.on { border: 2px solid var(--brand); }
+.crew-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.crew-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.crew-photos button, .ck-photos.done button { position: relative; padding: 0; border: 0; border-radius: 10px; overflow: hidden; cursor: zoom-in; aspect-ratio: 4 / 3; background: #E8EDF1; }
+.crew-photos img, .ck-photos.done img { width: 100%; height: 100%; object-fit: cover; }
+.crew-photos span, .ck-photos.done span { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(11,31,51,.66); color: #fff; font-size: 11px; padding: 2px 6px; text-align: left; }
+.crew-loc { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; color: var(--ink-2); }
+.crew-loc > span { flex: 1 1 160px; min-width: 0; }
+.only-m { display: none; }
+@media (max-width: 640px) {
+  .table-wrap { overflow: visible; }
+  table.tbl.stack { min-width: 0 !important; }
+  .tbl.stack thead { display: none; }
+  .tbl.stack, .tbl.stack tbody, .tbl.stack tr, .tbl.stack td { display: block; width: 100%; }
+  .tbl.stack tr { padding: 12px 16px; border-top: 1px solid #EEF1F4; }
+  .tbl.stack td { border: 0; padding: 2px 0 !important; text-align: left !important; white-space: normal !important; }
+  .tbl.stack td[data-label]::before { content: attr(data-label) " · "; color: var(--muted); font-size: 13px; font-family: var(--font); font-weight: 400; }
+  .tbl.stack .hide-m { display: none; }
+  .tbl.stack .only-m { display: inline; }
+  .tbl.stack .st-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tbl.stack .st-title { font-size: 16px; font-weight: 600; padding-top: 4px !important; }
+  .tbl.stack .st-prog { padding-top: 8px !important; }
+  .tbl.stack .st-actions { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px !important; }
+  .stop-edit { padding: 12px; gap: 10px; }
+  .stop-edit .tools { width: 100%; justify-content: flex-end; }
+  .crew-grid { padding: 12px; grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ====================== v1.3: แอปคนขับ ====================== */
+.phone.has-nav .d-body { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+.d-top { position: sticky; top: 0; z-index: 900; padding: calc(10px + env(safe-area-inset-top)) 12px 6px; background: linear-gradient(var(--bg) 70%, rgba(244,246,249,0)); }
+.d-hcard { background: var(--navy); color: #fff; border-radius: 22px; padding: 12px 12px 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(11,31,51,.18); }
+.d-hcard .t { flex: 1 1 auto; min-width: 0; }
+.d-hcard h1 { font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-hcard .sub { font-size: 13px; color: #C9D5E2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.d-hcard .icon-btn { color: #fff; background: rgba(255,255,255,.1); border-radius: 50%; }
+.gps-pill { display: inline-flex; align-items: center; gap: 6px; border: 2px solid rgba(255,255,255,.75); color: #fff; border-radius: 999px; padding: 4px 11px; font-weight: 700; font-size: 13px; text-decoration: none; flex: none; min-height: 34px; }
+.gps-pill:hover { color: #fff; }
+.gps-pill i { width: 9px; height: 9px; border-radius: 50%; background: #8A96A3; }
+.gps-pill.on i { background: #4ADE80; box-shadow: 0 0 0 3px rgba(74,222,128,.25); }
+.gps-pill.locating i { background: #FBBF24; animation: blink 1s infinite; }
+.gps-pill.denied, .gps-pill.error { border-color: #F87171; }
+.gps-pill.denied i, .gps-pill.error i { background: #F87171; }
+.gps-pill.off { opacity: .6; }
+@keyframes blink { 50% { opacity: .3; } }
+.d-nav { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(10px + env(safe-area-inset-bottom)); width: calc(100% - 24px); max-width: 536px; background: var(--navy); border-radius: 24px; padding: 6px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; z-index: 950; box-shadow: 0 10px 30px rgba(11,31,51,.3); }
+.d-nav a { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 58px; border-radius: 19px; color: #C9D5E2; text-decoration: none; font-weight: 600; font-size: 13px; }
+.d-nav a:hover { color: #fff; }
+.d-nav a.on { background: #CFE8F7; color: var(--navy); }
+.d-nav a.alert::after { content: ''; position: absolute; top: 8px; right: calc(50% - 20px); width: 10px; height: 10px; border-radius: 50%; background: #F87171; border: 2px solid var(--navy); }
+.d-nav a.on.alert::after { border-color: #CFE8F7; }
+.tl2-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.tl2-head h2 { font-size: 21px; font-weight: 700; }
+.tl2-head span { color: var(--muted); font-size: 14px; }
+.tl2 { display: flex; flex-direction: column; }
+.tl2-item { display: grid; grid-template-columns: 52px 30px minmax(0, 1fr) 18px; gap: 0 10px; color: var(--ink); text-decoration: none; position: relative; padding: 4px 0 20px; border-radius: 14px; }
+.tl2-item:hover { color: var(--ink); }
+@media (hover: hover) { .tl2-item:not(.now):hover .tl2-title { color: var(--brand); } }
+.tl2-item:not(:last-child)::before { content: ''; position: absolute; left: 76px; top: 36px; bottom: -4px; width: 2px; background: var(--line-2); }
+.tl2-item.done:not(:last-child)::before { background: #9CCFAA; }
+.tl2-time { font-size: 17px; font-weight: 600; color: var(--ink-2); padding-top: 4px; font-variant-numeric: tabular-nums; }
+.tl2-dot { width: 30px; height: 30px; border-radius: 50%; border: 3px solid var(--line-2); background: #fff; display: flex; align-items: center; justify-content: center; color: #fff; margin-top: 2px; z-index: 1; }
+.tl2-item.done .tl2-dot { background: var(--good); border-color: var(--good); }
+.tl2-item.now .tl2-dot { border-color: var(--brand); box-shadow: 0 0 0 5px rgba(14,107,168,.18); background: var(--brand); }
+.tl2-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tl2-item.now .tl2-body { background: #fff; border: 2px solid var(--brand); border-radius: 14px; padding: 10px 12px; margin: -6px 0 0; }
+.tl2-st { font-size: 13px; font-weight: 700; color: var(--muted); }
+.tl2-item.done .tl2-st { color: var(--good-ink); }
+.tl2-item.now .tl2-st { color: var(--brand); }
+.tl2-title { font-size: 18px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.tl2-item.done .tl2-title { color: var(--ink-2); }
+.tl2-sub { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.tl2-go { color: #AEB9C5; padding-top: 6px; }
+.ready-banner { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; background: var(--warn-soft); border: 1px solid #F7D2B5; color: var(--warn-ink); text-decoration: none; }
+.ready-banner:hover { color: var(--warn-ink); }
+.ready-banner > span:nth-child(2) { flex: 1 1 auto; display: flex; flex-direction: column; font-size: 13px; }
+.ready-banner b { font-size: 15px; }
+.ready-head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 10px 8px 2px; }
+.ready-head h2 { font-size: 22px; font-weight: 700; }
+.ready-head p { margin: 0; color: var(--muted); font-size: 14px; }
+.ready-ico { width: 60px; height: 60px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: flex; align-items: center; justify-content: center; }
+.ready-ico.good { background: var(--good-soft); color: var(--good); width: 72px; height: 72px; }
+.ready-info { display: flex; flex-direction: column; gap: 10px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--brand); }
+.ri-row { display: grid; grid-template-columns: 84px minmax(0, 1fr); align-items: center; gap: 10px; }
+.ri-row > span { font-size: 14px; color: var(--muted); }
+.ri-row > b { font-size: 17px; }
+.ck-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.ck-slot { position: relative; aspect-ratio: 1 / 1.05; border-radius: 16px; border: 2px dashed #AEB9C5; background: #F7F9FB; color: var(--brand-dark); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; overflow: hidden; text-align: center; padding: 6px; }
+.ck-slot:first-child:not(.has) { border-style: solid; border-color: var(--brand); background: var(--brand-soft); }
+.ck-slot .lb { font-size: 13px; font-weight: 600; line-height: 1.25; }
+.ck-slot.has { border: 0; padding: 0; background: var(--navy); }
+.ck-slot.has img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ck-slot.has .lb { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(11,31,51,.7); color: #fff; padding: 4px 6px; font-size: 12px; }
+.ck-slot .re { position: absolute; top: 6px; right: 6px; background: rgba(11,31,51,.72); color: #fff; border-radius: 999px; font-size: 11px; padding: 3px 8px; display: inline-flex; gap: 3px; align-items: center; }
+.ck-list { display: flex; flex-direction: column; gap: 8px; }
+.ck-item { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 14px; border: 1px solid var(--line-2); border-radius: 14px; cursor: pointer; font-size: 16px; background: #fff; }
+.ck-item input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ck-item .box { width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--line-2); display: flex; align-items: center; justify-content: center; color: transparent; flex: none; }
+.ck-item input:checked + .box { background: var(--good); border-color: var(--good); color: #fff; }
+.ck-item:has(input:checked) { border-color: #9CCFAA; background: #F7FBF8; }
+.ck-item input:focus-visible + .box { outline: 3px solid rgba(14,107,168,.35); outline-offset: 2px; }
+.ready-done { background: #fff; border: 2px solid var(--good); border-radius: 18px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.ck-photos.done { width: 100%; }
+.gps-card { display: flex; flex-direction: column; gap: 10px; }
+.gps-row { display: flex; align-items: center; gap: 12px; }
+.gps-ico { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: none; background: #EEF1F4; color: var(--muted); }
+.gps-ico.good { background: var(--good-soft); color: var(--good); }
+.gps-ico.bad { background: var(--bad-soft); color: var(--bad); }
+.me-card { display: flex; align-items: center; gap: 16px; }
+@media (max-width: 380px) {
+  .tl2-item { grid-template-columns: 46px 26px minmax(0, 1fr) 12px; gap: 0 8px; }
+  .tl2-item:not(:last-child)::before { left: 66px; }
+  .tl2-dot { width: 26px; height: 26px; }
+  .tl2-time { font-size: 15px; }
+  .ri-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
 
 </style>
 </head>
@@ -482,6 +624,18 @@ window.STJ_CONFIG = {
     return (ah * 60 + am) - (ph * 60 + pm);
   }
 
+  /* เวลาที่ผ่านมาจากเวลาไทยแบบ "YYYY-MM-DD HH:MM:SS" */
+  function stampMs(ts) { const t = Date.parse(String(ts || '').replace(' ', 'T') + '+07:00'); return isNaN(t) ? null : t; }
+  function timeAgo(ts) {
+    const t = stampMs(ts);
+    if (t === null) return '';
+    const m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (m < 1) return 'เมื่อสักครู่';
+    if (m < 60) return `${m} นาทีที่แล้ว`;
+    const h = Math.floor(m / 60);
+    return h < 24 ? `${h} ชม. ${m % 60 ? (m % 60) + ' นาที' : ''}ที่แล้ว`.replace('  ', ' ') : fmtStamp(ts);
+  }
+
   function fmtMin(m) {
     const h = Math.floor(m / 60), r = m % 60;
     return h ? `${h} ชม.${r ? ' ' + r + ' นาที' : ''}` : `${m} นาที`;
@@ -544,7 +698,12 @@ window.STJ_CONFIG = {
     external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
     key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
-    chat: '<path d="M4 5h16v11H9l-5 4z"/>'
+    chat: '<path d="M4 5h16v11H9l-5 4z"/>',
+    shield: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4 4.3-6 8-6s6.8 2 8 6"/>',
+    gps: '<circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/>',
+    calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+    crosshair: '<circle cx="12" cy="12" r="7"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/>'
   };
   function icon(name, size, extra) {
     return `<svg width="${size || 20}" height="${size || 20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra || ''}>${P[name] || ''}</svg>`;
@@ -573,10 +732,10 @@ window.STJ_CONFIG = {
     }
   }
 
-  function modal({ title, body, foot, wide, onClose }) {
+  function modal({ title, body, foot, wide, full, onClose }) {
     const bg = document.createElement('div');
     bg.className = 'modal-bg';
-    bg.innerHTML = `<div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title || '')}">
+    bg.innerHTML = `<div class="modal ${wide ? 'wide' : ''} ${full ? 'full' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title || '')}">
       <div class="modal-head"><h3>${esc(title || '')}</h3><button type="button" class="icon-btn" data-close aria-label="ปิด">${icon('x')}</button></div>
       <div class="modal-body">${body || ''}</div>
       ${foot ? `<div class="modal-foot">${foot}</div>` : ''}
@@ -584,6 +743,7 @@ window.STJ_CONFIG = {
     const prevFocus = document.activeElement;
     function close() {
       bg.remove();
+      if (!document.querySelector('.modal-bg')) document.documentElement.classList.remove('modal-open');
       document.removeEventListener('keydown', onKey);
       if (onClose) onClose();
       if (prevFocus && prevFocus.focus) prevFocus.focus();
@@ -592,8 +752,10 @@ window.STJ_CONFIG = {
     bg.addEventListener('click', (e) => { if (e.target === bg || e.target.closest('[data-close]')) close(); });
     document.addEventListener('keydown', onKey);
     document.body.appendChild(bg);
-    const first = bg.querySelector('input, textarea, select, .modal-foot .btn-primary');
+    const touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const first = touch ? null : bg.querySelector('input:not([type=file]), textarea, select, .modal-foot .btn-primary');
     if (first) setTimeout(() => first.focus(), 30);
+    document.documentElement.classList.add('modal-open');
     return { el: bg, close };
   }
   function confirmBox(message, okText, danger) {
@@ -624,8 +786,15 @@ window.STJ_CONFIG = {
 
   /* ---------- ลิงก์ Google Maps ---------- */
   const hasXY = (s) => s && s.lat !== null && s.lat !== undefined && s.lng !== null && s.lng !== undefined && s.lat !== '' && s.lng !== '';
+  function placeIdOf(s) {
+    if (!s) return '';
+    if (s.place_id) return s.place_id;
+    const m = String(s.map_url || '').match(/[?&]query_place_id=([^&#]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+  }
   function navUrl(stop) {
-    if (hasXY(stop)) return `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}&travelmode=driving`;
+    const pid = placeIdOf(stop);
+    if (hasXY(stop)) return `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}${pid ? '&destination_place_id=' + encodeURIComponent(pid) : ''}&travelmode=driving`;
     if (stop.map_url) return stop.map_url;
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((stop.name || '') + ' ' + (stop.address || ''))}`;
   }
@@ -634,13 +803,29 @@ window.STJ_CONFIG = {
     if (hasXY(stop)) return `https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lng}`;
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name || '')}`;
   }
-  function routeUrl(stops) {
-    const pts = (stops || []).map((s) => (hasXY(s) ? `${s.lat},${s.lng}` : (s.name + ' ' + (s.address || '')).trim()));
-    if (!pts.length) return '';
-    if (pts.length === 1) return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pts[0])}&travelmode=driving`;
-    const mid = pts.slice(1, -1).slice(0, 9);
-    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(pts[0])}&destination=${encodeURIComponent(pts[pts.length - 1])}` +
-      (mid.length ? `&waypoints=${encodeURIComponent(mid.join('|'))}` : '') + '&travelmode=driving';
+  /* ลิงก์เส้นทางทุกจุดตามลำดับ
+     opts.fromHere = true (ฝั่งคนขับ): เริ่มจากตำแหน่งปัจจุบันของมือถือ แล้วไปจุดแรก → จุดถัดไป → … → จุดสุดท้าย
+     ไม่งั้น (ฝั่งแอดมิน): เริ่มที่จุดแรก */
+  function routeUrl(stops, opts) {
+    opts = opts || {};
+    const list = (stops || []).filter(Boolean);
+    if (!list.length) return '';
+    const pt = (s) => (hasXY(s) ? `${s.lat},${s.lng}` : `${s.name || ''} ${s.address || ''}`.trim());
+    const enc = encodeURIComponent;
+    let origin = null, rest = list;
+    if (!opts.fromHere && list.length > 1) { origin = list[0]; rest = list.slice(1); }
+    rest = rest.slice(0, 10); // Google Maps รับจุดแวะได้สูงสุด 9 จุด + ปลายทาง
+    const dest = rest[rest.length - 1];
+    const mids = rest.slice(0, -1);
+    let u = 'https://www.google.com/maps/dir/?api=1';
+    if (origin) u += `&origin=${enc(pt(origin))}` + (placeIdOf(origin) ? `&origin_place_id=${enc(placeIdOf(origin))}` : '');
+    u += `&destination=${enc(pt(dest))}` + (placeIdOf(dest) ? `&destination_place_id=${enc(placeIdOf(dest))}` : '');
+    if (mids.length) {
+      u += `&waypoints=${enc(mids.map(pt).join('|'))}`;
+      const ids = mids.map(placeIdOf);
+      if (ids.every(Boolean)) u += `&waypoint_place_ids=${enc(ids.join('|'))}`;
+    }
+    return u + '&travelmode=driving';
   }
   function distanceM(a, b) {
     if (!hasXY(a) || !hasXY(b)) return null;
@@ -711,7 +896,24 @@ window.STJ_CONFIG = {
       maxZoom: 19, attribution: CONFIG.TILE_ATTRIBUTION || '&copy; OpenStreetMap'
     }).addTo(map);
     const list = (stops || []).filter(hasXY);
+    const cars = (opts.cars || []).filter(hasXY);
+    const carBounds = [];
+    cars.forEach((c) => {
+      const ic = L.divIcon({ className: '', html: `<div class="car-pin ${c.stale ? 'stale' : ''}">${icon('van', 15)}<span>${esc(c.label || c.name || '')}</span></div>`, iconSize: null, iconAnchor: [14, 14] });
+      L.marker([c.lat, c.lng], { icon: ic, zIndexOffset: 800, title: c.name || '' }).addTo(map)
+        .bindPopup(`<b>${esc(c.name || '')}</b><div class="small muted">ตำแหน่งล่าสุด ${esc(c.at ? hhmm(c.at) + ' น. · ' + timeAgo(c.at) : '')}${c.acc_m ? ' · ±' + esc(c.acc_m) + ' ม.' : ''}</div>` +
+          `<div style="margin-top:6px"><a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lng}" target="_blank" rel="noopener">เปิดใน Google Maps</a></div>`);
+      carBounds.push([c.lat, c.lng]);
+    });
+    if (opts.trail && opts.trail.length > 1) {
+      L.polyline(opts.trail.map((p) => [p[0], p[1]]), { color: '#7C3AED', weight: 3, opacity: 0.75, dashArray: '2 6' }).addTo(map);
+    }
     if (!list.length) {
+      if (carBounds.length) {
+        if (carBounds.length === 1) map.setView(carBounds[0], 14); else map.fitBounds(carBounds, { padding: [40, 40], maxZoom: 15 });
+        setTimeout(() => map.invalidateSize(), 60);
+        return map;
+      }
       map.setView([13.7563, 100.5018], 10);
       const note = document.createElement('div');
       note.className = 'map-note';
@@ -744,10 +946,68 @@ window.STJ_CONFIG = {
         bounds.extend([s.arrive_lat, s.arrive_lng]);
       }
     });
-    if (list.length === 1 && !opts.polyline) map.setView([list[0].lat, list[0].lng], 15);
+    if (opts.fitCars) carBounds.forEach((b) => bounds.extend(b));
+    if (list.length === 1 && !opts.polyline && !(opts.fitCars && carBounds.length)) map.setView([list[0].lat, list[0].lng], 15);
     else map.fitBounds(bounds, { padding: [36, 36], maxZoom: 16 });
     setTimeout(() => map.invalidateSize(), 60);
     return map;
+  }
+
+  /* ปักหมุดเองบนแผนที่: แตะเพื่อวางหมุด ลากเพื่อปรับ → คืนค่า {lat, lng} หรือ null ถ้ายกเลิก */
+  function pickOnMap(opts) {
+    opts = opts || {};
+    return new Promise((resolve) => {
+      let pos = hasXY(opts) ? { lat: Number(opts.lat), lng: Number(opts.lng) } : null;
+      let done = false, map = null, marker = null;
+      const m = modal({
+        title: opts.title || 'ปักหมุดบนแผนที่', wide: true, full: true,
+        body: `<div class="small muted">${esc(opts.hint || 'แตะบนแผนที่ตรงจุดนัด แล้วลากหมุดเพื่อปรับให้ตรง · ซูมด้วยสองนิ้วหรือปุ่ม + −')}</div>
+          <div class="pick-map" id="pm-map" aria-label="แผนที่สำหรับปักหมุด"></div>
+          <div class="row" style="align-items:center">
+            <span class="grow small" id="pm-xy" style="font-family:var(--mono)"></span>
+            <button type="button" class="btn btn-sm" id="pm-me">${icon('crosshair', 16)}ตำแหน่งของฉัน</button>
+          </div>`,
+        foot: `<button type="button" class="btn" data-close>ยกเลิก</button><button type="button" class="btn btn-primary" data-ok disabled>${icon('pin', 18)}ใช้ตำแหน่งนี้</button>`,
+        onClose: () => { if (map) map.remove(); if (!done) resolve(null); }
+      });
+      const q = (s) => m.el.querySelector(s);
+      const ok = q('[data-ok]');
+      function show() {
+        q('#pm-xy').textContent = pos ? `${pos.lat.toFixed(6)}, ${pos.lng.toFixed(6)}` : 'ยังไม่ได้ปักหมุด';
+        ok.disabled = !pos;
+      }
+      function place(ll, pan) {
+        pos = { lat: Math.round(ll.lat * 1e6) / 1e6, lng: Math.round(ll.lng * 1e6) / 1e6 };
+        if (!marker) {
+          marker = L.marker([pos.lat, pos.lng], { draggable: true, icon: L.divIcon({ className: '', html: '<div class="pin next">★</div>', iconSize: [30, 30], iconAnchor: [15, 15] }) }).addTo(map);
+          marker.on('dragend', () => place(marker.getLatLng()));
+        } else marker.setLatLng([pos.lat, pos.lng]);
+        if (pan) map.setView([pos.lat, pos.lng], Math.max(map.getZoom(), 16));
+        show();
+      }
+      if (!window.L) { q('#pm-map').innerHTML = '<div class="map-note">โหลดแผนที่ไม่ได้ ตรวจสอบอินเทอร์เน็ต</div>'; show(); return; }
+      map = L.map(q('#pm-map'), { zoomControl: true, tap: true });
+      L.tileLayer(CONFIG.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: CONFIG.TILE_ATTRIBUTION || '&copy; OpenStreetMap' }).addTo(map);
+      (opts.around || []).filter(hasXY).forEach((s) => {
+        L.marker([s.lat, s.lng], { icon: L.divIcon({ className: '', html: `<div class="pin">${esc(s.seq || '')}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] }), opacity: 0.6, interactive: false }).addTo(map);
+      });
+      const others = (opts.around || []).filter(hasXY);
+      if (pos) map.setView([pos.lat, pos.lng], 16);
+      else if (others.length) map.fitBounds(L.latLngBounds(others.map((s) => [s.lat, s.lng])).pad(0.3), { maxZoom: 14 });
+      else map.setView([13.7563, 100.5018], 11);
+      if (pos) place(pos);
+      map.on('click', (e) => place(e.latlng));
+      setTimeout(() => map.invalidateSize(), 120);
+      q('#pm-me').addEventListener('click', () => {
+        const b = q('#pm-me');
+        if (!navigator.geolocation) return toast('อุปกรณ์นี้หาตำแหน่งไม่ได้', 'bad');
+        busy(b, true, 'กำลังหา…');
+        navigator.geolocation.getCurrentPosition((p) => { busy(b, false); place({ lat: p.coords.latitude, lng: p.coords.longitude }, true); },
+          () => { busy(b, false); toast('หาตำแหน่งไม่ได้ — ตรวจสอบสิทธิ์ตำแหน่งของเบราว์เซอร์', 'bad'); }, { enableHighAccuracy: true, timeout: 15000 });
+      });
+      ok.addEventListener('click', () => { done = true; const r = pos; m.close(); resolve(r); });
+      show();
+    });
   }
 
   /* ---------- รูปภาพ ---------- */
@@ -796,10 +1056,10 @@ window.STJ_CONFIG = {
   }
 
   window.UI = {
-    CONFIG, $, $$, esc, today, addDays, bkkNow, fmtDate, fmtMin, relDay, hhmm, fmtStamp, minutesDiff,
+    CONFIG, $, $$, esc, today, addDays, bkkNow, fmtDate, fmtMin, relDay, hhmm, fmtStamp, minutesDiff, stampMs, timeAgo,
     STATUS, chip, jobTitle, nextStop, pct, progressBar, lastCheckin,
     icon, brandMark, toast, busy, modal, confirmBox, showPhoto, copyText,
-    hasXY, navUrl, placeUrl, routeUrl, distanceM, fmtDist, parseMapsUrl, renderMap,
+    hasXY, placeIdOf, navUrl, placeUrl, routeUrl, distanceM, fmtDist, parseMapsUrl, renderMap, pickOnMap,
     loadImage, resizeImage, pickImage, avatar, vehicleThumb
   };
 })();
@@ -859,10 +1119,11 @@ window.STJ_CONFIG = {
   function seed() {
     const t = UI.today();
     const tm = UI.addDays(t, 1);
-    const db = { settings: { company_name: 'บริษัท ตัวอย่างทัวร์ จำกัด', admin_pin: '000000', admin_pin_default: 'true', checkin_radius_m: '100' },
-      drivers: [], vehicles: [], jobs: [], stops: [], places: [], sessions: [] };
+    const db = { settings: { company_name: 'บริษัท ตัวอย่างทัวร์ จำกัด', admin_pin: '000000', admin_pin_default: 'true', checkin_radius_m: '100',
+      daily_check: 'on', gps_tracking: 'on', gps_interval_min: '3' },
+      drivers: [], vehicles: [], jobs: [], stops: [], places: [], sessions: [], dailyChecks: [], locations: [] };
     const drv = [['D1', 'สมชาย ใจดี', '111111'], ['D2', 'วิชัย ศรีสุข', '222222'], ['D3', 'ประเสริฐ มั่นคง', '333333'], ['D4', 'อนุชา แก้วมา', '444444']];
-    drv.forEach(([id, name, pin]) => db.drivers.push({ id, name, pin, phone: '', photo_url: '', active: 'true', created_at: t + ' 08:00:00' }));
+    drv.forEach(([id, name, pin], i) => db.drivers.push({ id, name, pin, phone: '08' + String(12345678 + i * 11111111).slice(0, 8), photo_url: '', active: 'true', created_at: t + ' 08:00:00' }));
     [['V1', 'ฮข 4521', 'Toyota Commuter', 13, '#F2F4F7'], ['V2', 'นข 7788', 'Hyundai H-1', 10, '#1F2937'], ['V3', '1กก 9032', 'Toyota Commuter VIP', 9, '#9CA3AF'], ['V4', 'ศร 1150', 'Nissan Urvan', 15, '#E5E7EB']]
       .forEach(([id, plate, name, seats, color]) => db.vehicles.push({ id, plate, name, seats, note: '', photo_url: vanPhoto(color, plate), active: 'true', created_at: t + ' 08:00:00' }));
     const vid = (plate) => (db.vehicles.find((v) => v.plate === plate) || {}).id || '';
@@ -896,6 +1157,17 @@ window.STJ_CONFIG = {
     job(4, t, T(20), 'รับส่งสนามบิน', 'D3', '1กก 9032', 'เที่ยวบิน TG 103 รอที่ประตู 3', [['โรงแรมชาเทรียม', T(20), ''], ['ท่าอากาศยานสุวรรณภูมิ', T(80), '']]);
     job(5, t, T(120), 'รับพนักงานกะบ่าย', 'D4', 'ศร 1150', '', [['เมกาบางนา', T(120), ''], ['หมู่บ้านพฤกษา', T(140), ''], ['นิคมอุตสาหกรรมบางปู', T(180), '']]);
     job(1, tm, '07:30', 'งานสัมมนา ไบเทค', 'D1', 'ฮข 4521', '', [['สยามพารากอน', '07:30', ''], ['ไบเทค บางนา', '08:30', '']]);
+    // ตรวจความพร้อมและตำแหน่งล่าสุดตัวอย่าง (สมชายยังไม่ได้ตรวจ — ให้ลองทำเอง)
+    [['D2', 'นข 7788', -95], ['D3', '1กก 9032', -30]].forEach(([d, plate, off]) => {
+      const dv = db.drivers.find((x) => x.id === d);
+      db.dailyChecks.push({ id: 'C' + d, date: t, driver_id: d, driver_name: dv.name, vehicle_id: vid(plate), plate, phone: dv.phone,
+        photos: ['รถภายนอก', 'ป้ายทะเบียน', 'ภายในรถ'].map((l, i) => ({ label: l, url: photo(`${l} · ${plate}`, 120 + i * 60) })),
+        lat: null, lng: null, acc_m: null, created_at: t + ' ' + T(off) + ':00' });
+    });
+    const loc = (d, name, p, off) => db.locations.push({ at: t + ' ' + T(off) + ':00', driver_id: d, name, lat: p.lat + 0.0021, lng: p.lng - 0.0034, acc_m: 14, source: 'gps', job_id: '' });
+    loc('D1', 'สมชาย ใจดี', place('เมกาบางนา'), -4);
+    loc('D2', 'วิชัย ศรีสุข', place('วัดไชยวัฒนาราม'), -12);
+    loc('D3', 'ประเสริฐ มั่นคง', place('โรงแรมชาเทรียม'), -2);
     PLACES.forEach((p, i) => db.places.push(Object.assign({ id: 'P' + i, map_url: `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`, used_count: 1, last_used: '' }, p)));
     return db;
   }
@@ -903,7 +1175,7 @@ window.STJ_CONFIG = {
   function load() {
     try {
       const db = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (db && db.jobs && db.vehicles) return db;
+      if (db && db.jobs && db.vehicles && db.dailyChecks) return db;
     } catch (e) { /* สร้างใหม่ */ }
     const db = seed();
     save(db);
@@ -926,6 +1198,8 @@ window.STJ_CONFIG = {
     return s;
   }
   const radius = (db) => (db.settings.checkin_radius_m === undefined ? 100 : Number(db.settings.checkin_radius_m) || 0);
+  const settingsOut = (db) => ({ company: db.settings.company_name, checkin_radius_m: radius(db), daily_check: db.settings.daily_check !== 'off',
+    gps_tracking: db.settings.gps_tracking !== 'off', gps_interval_min: Number(db.settings.gps_interval_min) || 3, places_api: false });
   function decorate(db, j) {
     const stops = db.stops.filter((s) => s.job_id === j.id).sort((a, b) => a.seq - b.seq)
       .map((s) => Object.assign({}, s, { photos: s.photos || (s.photo_url ? [s.photo_url] : []) }));
@@ -938,7 +1212,7 @@ window.STJ_CONFIG = {
   const sortJobs = (a, b) => ((a.date + (a.time || '99:99') + a.job_no) < (b.date + (b.time || '99:99') + b.job_no) ? -1 : 1);
 
   const A = {
-    ping: (db) => ({ app: 'Smart Tracking Jobs', version: 'demo', company: db.settings.company_name, checkin_radius_m: radius(db) }),
+    ping: (db) => Object.assign(settingsOut(db), { app: 'Smart Tracking Jobs', version: 'demo' }),
     publicDrivers: (db) => db.drivers.filter((d) => d.active === 'true').map((d) => ({ id: d.id, name: d.name, photo_url: d.photo_url || '' }))
       .sort((a, b) => a.name.localeCompare(b.name, 'th')),
     login(db, req) {
@@ -986,7 +1260,15 @@ window.STJ_CONFIG = {
         if (!isFinite(r) || r < 0 || r > 5000 || Math.round(r) !== r) fail('รัศมีเช็คอินต้องเป็นตัวเลข 0–5000 เมตร');
         db.settings.checkin_radius_m = String(r);
       }
-      return { company: db.settings.company_name, checkin_radius_m: radius(db) };
+      if (req.daily_check !== undefined) db.settings.daily_check = req.daily_check ? 'on' : 'off';
+      if (req.gps_tracking !== undefined) db.settings.gps_tracking = req.gps_tracking ? 'on' : 'off';
+      if (req.gps_interval_min !== undefined) {
+        const g = Number(req.gps_interval_min);
+        if (!isFinite(g) || g < 1 || g > 30 || Math.round(g) !== g) fail('ความถี่ส่งตำแหน่งต้องเป็น 1–30 นาที');
+        db.settings.gps_interval_min = String(g);
+      }
+      if (req.places_api_key) fail('โหมดตัวอย่างไม่รองรับ Google Places API key — ใช้ได้ในระบบจริง');
+      return settingsOut(db);
     },
     listDrivers(db, req) {
       auth(db, req, 'admin');
@@ -1146,7 +1428,11 @@ window.STJ_CONFIG = {
       if (!j || j.driver_id !== s.user_id) fail('สถานที่นี้ไม่ใช่งานของคุณ', 'FORBIDDEN');
       if (j.status === 'cancelled') fail('Job นี้ถูกยกเลิกแล้ว');
       if (st.status === 'arrived') fail('จุดนี้เช็คอินไปแล้ว');
+      if (db.settings.daily_check !== 'off' && !db.dailyChecks.some((c) => c.driver_id === s.user_id && c.date === UI.today())) {
+        fail('กรุณาตรวจความพร้อมประจำวันก่อนเช็คอิน (เมนู "ตรวจความพร้อม" ด้านล่าง)', 'NEED_DAILY');
+      }
       const now = UI.bkkNow().stamp;
+      if (num(req.lat) !== null) db.locations.push({ at: now, driver_id: s.user_id, name: s.name, lat: num(req.lat), lng: num(req.lng), acc_m: num(req.acc) === null ? null : Math.round(num(req.acc)), source: 'checkin', job_id: j.id });
       // โหมดตัวอย่างไม่บังคับรัศมี (ผู้ทดลองอยู่ไกลจากสถานที่ตัวอย่าง) แต่บันทึกระยะไว้ให้ดู
       const d = UI.distanceM(st, { lat: num(req.lat), lng: num(req.lng) });
       Object.assign(st, { status: 'arrived', arrived_at: now, arrive_lat: num(req.lat), arrive_lng: num(req.lng),
@@ -1183,7 +1469,79 @@ window.STJ_CONFIG = {
     listPlaces(db, req) {
       auth(db, req, 'admin');
       return db.places.slice().sort((a, b) => (b.used_count || 0) - (a.used_count || 0));
-    }
+    },
+    suggestPlace(db, req) {
+      auth(db, req, 'admin');
+      const q = clean(req.q, 150);
+      if (q.length < 2) return { source: 'none', items: [] };
+      const co = UI.parseMapsUrl(q);
+      if (co.lat !== null) return { source: 'coords', items: [{ name: 'พิกัด ' + q, address: '', lat: co.lat, lng: co.lng, map_url: `https://www.google.com/maps/search/?api=1&query=${co.lat},${co.lng}` }] };
+      const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+      return { source: 'geocoder', items: PLACES.filter((p) => words.every((w) => (p.name + ' ' + p.address).toLowerCase().includes(w))).slice(0, 5)
+        .map((p) => ({ name: p.name, address: p.address, lat: p.lat, lng: p.lng, map_url: `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}` })) };
+    },
+    placeDetails() { fail('โหมดตัวอย่างไม่รองรับ Google Places'); },
+    myDay(db, req) {
+      const s = auth(db, req, 'driver');
+      const t = UI.today();
+      const d = db.drivers.find((x) => x.id === s.user_id) || {};
+      const mine = db.jobs.filter((j) => j.driver_id === s.user_id && j.date === t && j.status !== 'cancelled').sort((a, b) => ((a.time || '99:99') < (b.time || '99:99') ? -1 : 1));
+      const first = mine.find((j) => j.status !== 'done') || mine[0] || null;
+      const c = db.dailyChecks.find((x) => x.driver_id === s.user_id && x.date === t);
+      const vehicles = db.vehicles.filter((v) => v.active === 'true');
+      return Object.assign(settingsOut(db), {
+        date: t, version: 'demo', driver: { id: d.id, name: d.name, phone: d.phone || '', photo_url: d.photo_url || '' },
+        check: c ? Object.assign({}, c, { vehicle_name: (vehicles.find((v) => v.id === c.vehicle_id) || {}).name || '' }) : null,
+        vehicle_id: first ? first.vehicle_id : '', plate: first ? first.plate : '', jobs_today: mine.length,
+        vehicles: vehicles.map((v) => ({ id: v.id, plate: v.plate, name: v.name, seats: v.seats, photo_url: v.photo_url })),
+        photo_labels: ['รถภายนอก', 'ป้ายทะเบียน', 'ภายในรถ']
+      });
+    },
+    saveDailyCheck(db, req) {
+      const s = auth(db, req, 'driver');
+      const photos = Array.isArray(req.photos) ? req.photos : [];
+      if (photos.length !== 3 || photos.some((p) => !/^data:image\//.test(String(p || '')))) fail('กรุณาถ่ายรูปให้ครบ 3 รูป (รถภายนอก, ป้ายทะเบียน, ภายในรถ)');
+      if (!['name', 'phone', 'vehicle', 'gps'].every((k) => req.items && req.items[k] === true)) fail('กรุณาติ๊กยืนยันให้ครบทุกข้อ');
+      const t = UI.today();
+      if (db.dailyChecks.some((c) => c.driver_id === s.user_id && c.date === t)) fail('วันนี้ตรวจความพร้อมไปแล้ว');
+      const v = db.vehicles.find((x) => x.id === req.vehicle_id);
+      if (!v && db.vehicles.some((x) => x.active === 'true')) fail('กรุณาเลือกรถที่ใช้วันนี้');
+      const d = db.drivers.find((x) => x.id === s.user_id);
+      if (d && req.phone) d.phone = clean(req.phone, 20);
+      const labels = ['รถภายนอก', 'ป้ายทะเบียน', 'ภายในรถ'];
+      const c = { id: 'C' + uid(), date: t, driver_id: s.user_id, driver_name: s.name, vehicle_id: v ? v.id : '', plate: v ? v.plate : clean(req.plate, 20),
+        phone: clean(req.phone, 20), photos: photos.map((u, i) => ({ label: labels[i], url: u })), lat: num(req.lat), lng: num(req.lng),
+        acc_m: num(req.acc) === null ? null : Math.round(num(req.acc)), created_at: UI.bkkNow().stamp };
+      db.dailyChecks.push(c);
+      if (c.lat !== null) db.locations.push({ at: c.created_at, driver_id: s.user_id, name: s.name, lat: c.lat, lng: c.lng, acc_m: c.acc_m, source: 'daily_check', job_id: '' });
+      return Object.assign({}, c, { vehicle_name: v ? v.name : '' });
+    },
+    reportLocation(db, req) {
+      const s = auth(db, req, 'driver');
+      const lat = num(req.lat), lng = num(req.lng);
+      if (lat === null || lng === null || Math.abs(lat) > 90 || Math.abs(lng) > 180) fail('ตำแหน่งไม่ถูกต้อง');
+      if (db.settings.gps_tracking === 'off') return { saved: false, reason: 'off' };
+      const at = UI.bkkNow().stamp;
+      db.locations.push({ at, driver_id: s.user_id, name: s.name, lat, lng, acc_m: num(req.acc) === null ? null : Math.round(num(req.acc)), source: req.source === 'manual' ? 'manual' : 'gps', job_id: '' });
+      if (db.locations.length > 400) db.locations = db.locations.slice(-300);
+      return { saved: true, at, interval_min: Number(db.settings.gps_interval_min) || 3 };
+    },
+    dayStatus(db, req) {
+      auth(db, req, 'admin');
+      const date = isDate(req.date) ? req.date : UI.today();
+      const latest = {};
+      const trail = [];
+      db.locations.filter((l) => String(l.at).slice(0, 10) === date).forEach((l) => {
+        if (!latest[l.driver_id] || latest[l.driver_id].at <= l.at) latest[l.driver_id] = l;
+        if (req.trail && l.driver_id === req.trail) trail.push([l.lat, l.lng, l.at]);
+      });
+      return Object.assign(settingsOut(db), {
+        date, checks: db.dailyChecks.filter((c) => c.date === date).map((c) => Object.assign({}, c, { vehicle_name: (db.vehicles.find((v) => v.id === c.vehicle_id) || {}).name || '' })),
+        drivers: db.drivers.filter((d) => d.active === 'true').map((d) => ({ id: d.id, name: d.name, phone: d.phone || '', photo_url: d.photo_url || '' })),
+        locations: Object.values(latest), trail
+      });
+    },
+    clientLog() { return true; }
   };
 
   window.DemoBackend = {
@@ -1261,7 +1619,45 @@ window.STJ_CONFIG = {
     constructor(msg, code) { super(msg); this.code = code || ''; }
   }
 
-  async function call(action, payload) {
+  /* คำสั่งที่ส่งซ้ำได้อย่างปลอดภัย: ถ้าเน็ตสะดุด จะลองใหม่ให้อัตโนมัติ 1 ครั้งก่อนแจ้งผู้ใช้ */
+  const SAFE_RETRY = ['ping', 'publicDrivers', 'login', 'me', 'listJobs', 'getJob', 'listDrivers', 'listVehicles', 'listPlaces',
+    'myDay', 'dayStatus', 'searchPlace', 'suggestPlace', 'placeDetails', 'resolveLink'];
+  const pendingErrors = [];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function call(action, payload, opts) {
+    opts = opts || {};
+    try {
+      const data = await once(action, payload);
+      if (pendingErrors.length && action !== 'clientLog') flushErrors();
+      return data;
+    } catch (e) {
+      const net = e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'BAD_RESPONSE';
+      if (net && !opts.noRetry && SAFE_RETRY.indexOf(action) > -1 && (e.code !== 'TIMEOUT' || action === 'login')) {
+        await sleep(1200);
+        try {
+          const data = await once(action, payload);
+          noteError(action, e, 'สำเร็จเมื่อลองซ้ำ');
+          flushErrors();
+          return data;
+        } catch (e2) { if (e2.code === 'NETWORK' || e2.code === 'TIMEOUT' || e2.code === 'BAD_RESPONSE') noteError(action, e2, 'ลองซ้ำแล้วไม่สำเร็จ'); throw e2; }
+      }
+      if (net && action !== 'clientLog') noteError(action, e, '');
+      throw e;
+    }
+  }
+  function noteError(action, e, extra) {
+    if (isDemo()) return;
+    pendingErrors.push(`${action}: ${e.code} ${e.message}${extra ? ' (' + extra + ')' : ''} @${new Date().toISOString().slice(11, 19)}`);
+    if (pendingErrors.length > 6) pendingErrors.shift();
+  }
+  function flushErrors() {
+    const msg = pendingErrors.splice(0).join(' | ');
+    if (!msg) return;
+    once('clientLog', { msg, where: (location.hash || '').split('?')[0], ua: navigator.userAgent }).catch(() => {});
+  }
+
+  async function once(action, payload) {
     const s = session();
     const body = Object.assign({ action }, payload || {}, s ? { token: s.token } : {});
     let res;
@@ -1271,7 +1667,7 @@ window.STJ_CONFIG = {
       const url = apiUrl();
       if (!url) throw new ApiError('ยังไม่ได้เชื่อมต่อระบบหลังบ้าน', 'SETUP');
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), action === 'checkIn' ? 120000 : 45000);
+      const timer = setTimeout(() => ctrl.abort(), action === 'checkIn' || action === 'saveDailyCheck' ? 120000 : action === 'login' ? 25000 : 45000);
       try {
         const r = await fetch(url, {
           method: 'POST', redirect: 'follow', signal: ctrl.signal,
@@ -1383,7 +1779,7 @@ window.STJ_CONFIG = {
 
   /* ====================== ภาพรวม ====================== */
   V.dashboard = async function () {
-    const st = { date: App.state.dashDate || UI.today(), jobs: [], sel: App.state.dashSel || null, at: '' };
+    const st = { date: App.state.dashDate || UI.today(), jobs: [], sel: App.state.dashSel || null, at: '', day: null, focus: null, trail: null };
     mount('home', `
       ${pinBanner()}
       <div class="page-head">
@@ -1399,12 +1795,16 @@ window.STJ_CONFIG = {
       <div class="split stretch">
         <section class="main card map-card" aria-label="แผนที่เส้นทาง">
           <div class="card-head"><h2 id="d-maptitle">เส้นทาง</h2>
-            <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:var(--brand)"></i>จุดถัดไป</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่เช็คอิน</span></div>
+            <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:var(--brand)"></i>จุดถัดไป</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่เช็คอิน</span><span><i class="dot" style="background:var(--navy)"></i>ตำแหน่งรถล่าสุด</span></div>
           </div>
           <div class="map" id="d-map"></div>
         </section>
         <aside class="side" aria-label="รายละเอียด Job" id="d-side">${loading()}</aside>
       </div>
+      <section class="card" aria-label="คนขับวันนี้">
+        <div class="card-head"><h2>คนขับ · ความพร้อมและตำแหน่งล่าสุด</h2><span class="muted small" id="d-crew-note"></span></div>
+        <div id="d-crew">${loading()}</div>
+      </section>
       <section class="card" aria-label="Job ของวัน">
         <div class="card-head"><h2>Job ของวัน</h2><span class="muted small" id="d-at"></span></div>
         <div id="d-table">${loading()}</div>
@@ -1413,7 +1813,13 @@ window.STJ_CONFIG = {
     async function load(silent) {
       if (!silent) $('#d-refresh').disabled = true;
       try {
-        st.jobs = await API.call('listJobs', { from: st.date, to: st.date });
+        const [jobs, day] = await Promise.all([
+          API.call('listJobs', { from: st.date, to: st.date }),
+          API.call('dayStatus', { date: st.date, trail: st.focus || '' }).catch(() => null)
+        ]);
+        st.jobs = jobs;
+        st.day = day;
+        st.trail = day && st.focus ? day.trail : null;
         st.at = UI.bkkNow().time;
         if (!st.jobs.some((j) => j.id === st.sel)) {
           const pick = st.jobs.find((j) => j.status === 'in_progress') || st.jobs.find((j) => j.status === 'pending') || st.jobs[0];
@@ -1421,7 +1827,7 @@ window.STJ_CONFIG = {
         }
         draw();
       } catch (e) {
-        if (!silent) { $('#d-table').innerHTML = errorBox(e); $('#d-side').innerHTML = ''; $('#d-tiles').innerHTML = ''; }
+        if (!silent) { $('#d-table').innerHTML = errorBox(e); $('#d-side').innerHTML = ''; $('#d-tiles').innerHTML = ''; $('#d-crew').innerHTML = ''; }
       } finally {
         const b = $('#d-refresh'); if (b) b.disabled = false;
       }
@@ -1434,21 +1840,83 @@ window.STJ_CONFIG = {
         <div class="tile"><span class="k">Job ทั้งหมด</span><span class="v">${live.length}</span></div>
         <div class="tile blue"><span class="k">กำลังทำ</span><span class="v">${live.filter((j) => j.status === 'in_progress').length}</span></div>
         <div class="tile green"><span class="k">เสร็จแล้ว</span><span class="v">${live.filter((j) => j.status === 'done').length}</span></div>
-        <div class="tile ${overdue ? 'orange' : ''}"><span class="k">จุดที่เลยเวลานัด</span><span class="v">${overdue}</span></div>`;
+        <div class="tile ${overdue ? 'orange' : ''}"><span class="k">จุดที่เลยเวลานัด</span><span class="v">${overdue}</span></div>
+        ${st.day && st.day.daily_check ? (() => { const c = crew(); const ok = c.filter((x) => x.check).length; const need = c.filter((x) => x.jobs.length).length; return `<div class="tile ${need && ok < need ? 'orange' : 'green'}"><span class="k">คนขับพร้อมแล้ว</span><span class="v">${ok}<span style="font-size:18px;color:var(--muted)">/${need}</span></span></div>`; })() : ''}`;
       $('#d-at').textContent = `อัปเดตล่าสุด ${st.at} น. · กดรีเฟรชเพื่อดูข้อมูลใหม่`;
       $('#d-sub').textContent = UI.fmtDate(st.date) + (st.date === UI.today() ? ' (วันนี้)' : '');
       drawSide();
       drawMap();
       drawTable();
+      drawCrew();
+    }
+
+    /* คนขับที่เกี่ยวข้องกับวันที่เลือก: มีงาน / ตรวจความพร้อมแล้ว / มีตำแหน่ง */
+    function crew() {
+      const day = st.day;
+      if (!day) return [];
+      const byId = {};
+      const add = (id, name, photo) => (byId[id] = byId[id] || { id, name, photo_url: photo || '', jobs: [], check: null, loc: null });
+      day.drivers.forEach((d) => add(d.id, d.name, d.photo_url).phone = d.phone);
+      st.jobs.filter((j) => j.status !== 'cancelled').forEach((j) => add(j.driver_id, j.driver_name, j.driver_photo_url).jobs.push(j));
+      day.checks.forEach((c) => { add(c.driver_id, c.driver_name).check = c; });
+      day.locations.forEach((l) => { add(l.driver_id, l.name).loc = l; });
+      return Object.values(byId).filter((x) => x.jobs.length || x.check || x.loc)
+        .sort((a, b) => (b.jobs.length ? 1 : 0) - (a.jobs.length ? 1 : 0) || a.name.localeCompare(b.name, 'th'));
+    }
+    function cars() {
+      if (!st.day) return [];
+      const today = st.date === UI.today();
+      return st.day.locations.map((l) => {
+        const age = UI.stampMs(l.at) ? (Date.now() - UI.stampMs(l.at)) / 60000 : 999;
+        return Object.assign({}, l, { label: String(l.name || '').split(' ')[0], stale: !today || age > 15 });
+      });
+    }
+    function drawCrew() {
+      const day = st.day;
+      const box = $('#d-crew');
+      if (!day) { box.innerHTML = '<div class="empty">โหลดข้อมูลคนขับไม่ได้ — กดรีเฟรช</div>'; return; }
+      $('#d-crew-note').textContent = (day.gps_tracking ? `ส่งตำแหน่งทุก ${day.gps_interval_min} นาที เฉพาะตอนคนขับเปิดแอป` : 'ปิดการส่งตำแหน่ง') +
+        (day.daily_check ? '' : ' · ไม่ได้บังคับตรวจความพร้อม');
+      const list = crew();
+      if (!list.length) { box.innerHTML = `<div class="empty">${icon('users', 32)}<div>ยังไม่มีคนขับที่มีงานในวันนี้</div></div>`; return; }
+      box.innerHTML = `<div class="crew-grid">${list.map((c) => {
+        const ck = c.check;
+        const status = !day.daily_check ? '' : ck ? `<span class="chip st-done">พร้อม ${esc(UI.hhmm(ck.created_at))} น.</span>`
+          : c.jobs.length ? '<span class="chip st-cancelled">ยังไม่ตรวจความพร้อม</span>' : '<span class="chip">ไม่มีงาน</span>';
+        const loc = c.loc;
+        return `<article class="crew-card ${st.focus === c.id ? 'on' : ''}">
+          <div class="crew-top">${UI.avatar(c.name, c.photo_url, 44)}<div style="min-width:0;flex:1 1 auto"><b>${esc(c.name)}</b>
+            <div class="small muted">${c.jobs.length ? c.jobs.length + ' งาน' : 'ไม่มีงาน'}${ck && ck.plate ? ' · <span class="mono">' + esc(ck.plate) + '</span>' : (c.jobs[0] ? ' · <span class="mono">' + esc(c.jobs[0].plate) + '</span>' : '')}</div></div>${status}</div>
+          ${ck && ck.photos && ck.photos.length ? `<div class="crew-photos">${ck.photos.map((p) => `<button type="button" data-photo="${esc(p.url)}" data-cap="${esc(c.name + ' · ' + p.label)}" aria-label="ดูรูป ${esc(p.label)}"><img src="${esc(p.url)}" alt="" loading="lazy"><span>${esc(p.label)}</span></button>`).join('')}</div>` : ''}
+          <div class="crew-loc">${icon('gps', 16)}${loc ? `<span>ตำแหน่งล่าสุด <b>${esc(UI.hhmm(loc.at))} น.</b> <span class="muted">(${esc(UI.timeAgo(loc.at))})</span></span>
+              <button type="button" class="btn btn-sm" data-focus="${esc(c.id)}">${st.focus === c.id ? 'ซ่อนเส้นทาง' : 'ดูบนแผนที่'}</button>` : '<span class="muted">ยังไม่มีตำแหน่งวันนี้</span>'}</div>
+        </article>`;
+      }).join('')}</div>`;
+      $$('[data-photo]', box).forEach((b) => b.addEventListener('click', () => UI.showPhoto(b.dataset.photo, b.dataset.cap)));
+      $$('[data-focus]', box).forEach((b) => b.addEventListener('click', async () => {
+        const id = b.dataset.focus;
+        if (st.focus === id) { st.focus = null; st.trail = null; drawCrew(); drawMap(); return; }
+        st.focus = id;
+        busy(b, true, 'กำลังโหลด…');
+        try { const day2 = await API.call('dayStatus', { date: st.date, trail: id }); st.day = day2; st.trail = day2.trail; } catch (e) { toast(e.message, 'bad'); }
+        drawCrew(); drawMap();
+        $('#d-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }));
     }
 
     function drawMap() {
       const job = st.jobs.find((j) => j.id === st.sel);
       $('#d-maptitle').innerHTML = job ? `เส้นทาง · <span class="mono">${esc(job.job_no)}</span>` : 'เส้นทาง';
-      UI.renderMap($('#d-map'), job ? job.stops : [], {
-        polyline: job && job.route_polyline, showCheckins: true, markNext: true, radius: job && job.checkin_radius_m,
-        emptyText: job ? 'Job นี้ยังไม่มีพิกัดสถานที่' : 'ไม่มี Job ในวันที่เลือก'
+      const focusCar = st.focus ? cars().filter((c) => c.driver_id === st.focus) : [];
+      const map = UI.renderMap($('#d-map'), focusCar.length ? [] : (job ? job.stops : []), {
+        polyline: !focusCar.length && job && job.route_polyline, showCheckins: true, markNext: true, radius: job && job.checkin_radius_m,
+        emptyText: job ? 'Job นี้ยังไม่มีพิกัดสถานที่' : 'ไม่มี Job ในวันที่เลือก',
+        cars: focusCar.length ? focusCar : cars(), trail: focusCar.length ? st.trail : null
       });
+      if (focusCar.length && map && st.trail && st.trail.length > 1 && window.L) {
+        map.fitBounds(L.latLngBounds(st.trail.map((p) => [p[0], p[1]]).concat([[focusCar[0].lat, focusCar[0].lng]])), { padding: [40, 40], maxZoom: 16 });
+      }
+      if (focusCar.length) $('#d-maptitle').innerHTML = `ตำแหน่งและเส้นทางที่ผ่านมา · ${esc(focusCar[0].name)}`;
     }
 
     function drawSide() {
@@ -1498,7 +1966,7 @@ window.STJ_CONFIG = {
       html += '</div>';
       $('#d-side').innerHTML = html;
       $$('[data-sel]', $('#d-side')).forEach((b) => b.addEventListener('click', () => {
-        st.sel = b.dataset.sel; App.state.dashSel = st.sel; drawSide(); drawMap();
+        st.sel = b.dataset.sel; App.state.dashSel = st.sel; st.focus = null; st.trail = null; drawSide(); drawMap(); drawCrew();
       }));
       $$('[data-photo]', $('#d-side')).forEach((b) => b.addEventListener('click', () => UI.showPhoto(b.dataset.photo, b.dataset.cap)));
     }
@@ -1521,18 +1989,18 @@ window.STJ_CONFIG = {
   };
 
   function jobTable(jobs) {
-    return `<div class="table-wrap"><table class="tbl"><thead><tr>
+    return `<div class="table-wrap"><table class="tbl stack"><thead><tr>
       <th>เลข Job</th><th>วันที่</th><th>ชื่องาน / เส้นทาง</th><th>คนขับ</th><th>ทะเบียน</th><th>เวลาเริ่ม</th><th>ความคืบหน้า</th><th>สถานะ</th>
       </tr></thead><tbody>${jobs.map((j) => `
       <tr class="click" data-go="#/admin/jobs/${esc(j.id)}" tabindex="0">
-        <td class="mono small">${esc(j.job_no)}</td>
-        <td style="white-space:nowrap">${esc(UI.fmtDate(j.date, { short: true }))}</td>
-        <td>${esc(UI.jobTitle(j))}<div class="muted small">${j.total_count} จุด</div></td>
-        <td>${esc(j.driver_name)}</td>
-        <td class="mono small" style="white-space:nowrap">${esc(j.plate)}</td>
-        <td>${esc(j.time || '-')}</td>
-        <td style="min-width:120px"><div class="small" style="margin-bottom:4px">${j.done_count}/${j.total_count} จุด</div>${UI.progressBar(j)}</td>
-        <td>${chip(j.status)}</td>
+        <td class="mono small st-top"><span>${esc(j.job_no)}</span><span class="only-m">${chip(j.status)}</span></td>
+        <td style="white-space:nowrap" data-label="วันที่">${esc(UI.fmtDate(j.date, { short: true }))}${j.time ? '<span class="only-m"> · ' + esc(j.time) + ' น.</span>' : ''}</td>
+        <td class="st-title">${esc(UI.jobTitle(j))}<div class="muted small">${j.total_count} จุด</div></td>
+        <td data-label="คนขับ">${esc(j.driver_name)}</td>
+        <td class="mono small" style="white-space:nowrap" data-label="ทะเบียน">${esc(j.plate)}</td>
+        <td class="hide-m">${esc(j.time || '-')}</td>
+        <td style="min-width:120px" class="st-prog"><div class="small" style="margin-bottom:4px">${j.done_count}/${j.total_count} จุด</div>${UI.progressBar(j)}</td>
+        <td class="hide-m">${chip(j.status)}</td>
       </tr>`).join('')}</tbody></table></div>`;
   }
   function bindJobTable(root) {
@@ -1689,10 +2157,11 @@ window.STJ_CONFIG = {
               <input class="input" data-i="${i}" data-f="name" value="${esc(s.name)}" aria-label="ชื่อสถานที่ จุดที่ ${i + 1}" maxlength="120" placeholder="ชื่อสถานที่">
               <div class="meta">
                 ${s.address ? `<span>${esc(s.address)}</span>` : ''}
-                ${UI.hasXY(s) ? '<span class="tag good">มีพิกัด</span>' : '<span class="tag warn">ไม่มีพิกัด · นำทางด้วยลิงก์</span>'}
+                ${UI.hasXY(s) ? `<span class="tag good">มีพิกัด</span><button type="button" class="link-btn" data-pinmap="${i}">${icon('pin', 14)}ปรับหมุด</button>` : '<span class="tag warn">ไม่มีพิกัด — ไม่ขึ้นแผนที่ ตรวจรัศมีไม่ได้</span>'}
                 <a href="${esc(UI.placeUrl(s))}" target="_blank" rel="noopener">ดูใน Google Maps</a>
                 ${locked ? `<span class="tag good">${icon('check', 12)}เช็คอินแล้ว ${esc(UI.hhmm(s.arrived_at))}</span>` : ''}
               </div>
+              ${UI.hasXY(s) ? '' : `<div class="actions"><button type="button" class="btn btn-sm btn-primary" data-geo="${i}">${icon('search', 16)}หาพิกัดจากชื่อ</button><button type="button" class="btn btn-sm" data-pinmap="${i}">${icon('pin', 16)}ปักหมุดเองบนแผนที่</button></div>`}
               <div class="grid g2" style="gap:10px">
                 <label class="field"><span class="small">เวลานัด</span><input type="time" class="input sm" data-i="${i}" data-f="planned_time" value="${esc(s.planned_time)}"></label>
                 <label class="field"><span class="small">หมายเหตุจุดนี้</span><input class="input sm" data-i="${i}" data-f="note" value="${esc(s.note)}" maxlength="300" placeholder="เช่น รับ 3 คน, รอหน้าป้อม"></label>
@@ -1719,6 +2188,43 @@ window.STJ_CONFIG = {
         st.stops.splice(Number(b.dataset.del), 1);
         st.dirtyRoute = true; drawStops(); drawMap(); drawSummary();
       }));
+      $$('#s-list [data-pinmap]').forEach((b) => b.addEventListener('click', () => pinStop(Number(b.dataset.pinmap))));
+      $$('#s-list [data-geo]').forEach((b) => b.addEventListener('click', () => geoStop(Number(b.dataset.geo), b)));
+    }
+
+    function setXY(i, p, extra) {
+      Object.assign(st.stops[i], { lat: p.lat, lng: p.lng }, extra || {});
+      st.dirtyRoute = true; drawStops(); drawMap(); drawSummary();
+      toast(`ปักหมุด "${st.stops[i].name}" แล้ว`, 'good');
+    }
+    async function pinStop(i) {
+      const s0 = st.stops[i];
+      const p = await UI.pickOnMap({ title: `ปักหมุด · ${s0.name || 'จุดที่ ' + (i + 1)}`, lat: s0.lat, lng: s0.lng,
+        around: st.stops.map((x, k) => Object.assign({}, x, { seq: k + 1 })).filter((x, k) => k !== i) });
+      if (p) setXY(i, p);
+    }
+    async function geoStop(i, btn) {
+      const s0 = st.stops[i];
+      const q = `${s0.name || ''} ${s0.address || ''}`.trim();
+      if (q.length < 2) return pinStop(i);
+      busy(btn, true, 'กำลังค้นหา…');
+      let list = [];
+      try { list = await API.call('searchPlace', { q }); } catch (e) { toast(e.message, 'bad'); }
+      busy(btn, false);
+      const m = UI.modal({
+        title: `หาพิกัด · ${s0.name}`,
+        body: (list.length ? `<div class="muted small">เลือกสถานที่ที่ตรงกับจุดนี้</div>` + list.map((r, k) => `<div class="result"><span class="grow"><span class="t">${esc(r.name)}</span><div class="s">${esc(r.address)}</div></span>
+            <a class="btn btn-sm btn-ghost" href="${esc(r.map_url)}" target="_blank" rel="noopener" aria-label="ดูใน Google Maps">${icon('external', 16)}</a>
+            <button type="button" class="btn btn-sm btn-primary" data-pickres="${k}">เลือก</button></div>`).join('')
+          : `<div class="banner info">ไม่พบพิกัดจากชื่อ "${esc(q)}" — ปักหมุดเองบนแผนที่ได้</div>`),
+        foot: `<button type="button" class="btn" data-close>ปิด</button><button type="button" class="btn" data-manual>${icon('pin', 16)}ปักหมุดเองบนแผนที่</button>`
+      });
+      m.el.querySelectorAll('[data-pickres]').forEach((b) => b.addEventListener('click', () => {
+        const r = list[Number(b.dataset.pickres)];
+        m.close();
+        setXY(i, r, { address: s0.address || r.address, map_url: s0.map_url || r.map_url });
+      }));
+      m.el.querySelector('[data-manual]').addEventListener('click', () => { m.close(); pinStop(i); });
     }
 
     function drawMap() {
@@ -1750,11 +2256,11 @@ window.STJ_CONFIG = {
       const tabs = [['search', 'ค้นหาสถานที่', 'search'], ['link', 'วางลิงก์ Google Maps', 'link'], ['saved', 'สถานที่ที่เคยใช้', 'pin']];
       let body = '';
       if (st.tab === 'search') {
-        body = `<form class="row" id="f-search">
-            <label class="field grow"><span>ค้นหาชื่อสถานที่หรือที่อยู่</span><input class="input" id="q" placeholder="เช่น เซ็นทรัล บางนา, สนามบินสุวรรณภูมิ" value="${esc(st.lastQ || '')}" autocomplete="off"></label>
+        body = `<form class="row" id="f-search" autocomplete="off">
+            <label class="field grow"><span>ค้นหาชื่อสถานที่หรือที่อยู่</span><input class="input" id="q" type="search" enterkeyhint="search" placeholder="พิมพ์ เช่น เซ็นทรัล บางนา, สนามบินสุวรรณภูมิ" value="${esc(st.lastQ || '')}" autocomplete="off"></label>
             <button class="btn btn-dark" type="submit">${icon('search', 18)}ค้นหา</button>
           </form>
-          ${API.isDemo() ? '<div class="muted small">โหมดตัวอย่างค้นได้เฉพาะสถานที่ตัวอย่าง เช่น บางนา, สนามบิน, อยุธยา — ระบบจริงค้นจาก Google</div>' : '<div class="muted small">ผลค้นหาจาก Google · ถ้าไม่เจอ ให้เปิดค้นใน Google Maps แล้วคัดลอกลิงก์มาวางในแท็บ "วางลิงก์"</div>'}
+          <div class="muted small" id="q-hint">${API.isDemo() ? 'พิมพ์แล้วรายการแนะนำจะขึ้นเอง · โหมดตัวอย่างค้นได้เฉพาะสถานที่ตัวอย่าง เช่น บางนา, สนามบิน, อยุธยา' : 'พิมพ์แล้วรายการแนะนำจะขึ้นเอง (สถานที่ที่เคยใช้ + ผลจาก Google) · ถ้าไม่เจอ ให้คัดลอกลิงก์จาก Google Maps มาวางในแท็บ "วางลิงก์"'}</div>
           <div id="results" style="display:flex;flex-direction:column;gap:8px">${resultsHtml()}</div>`;
       } else if (st.tab === 'link') {
         body = `<form class="row" id="f-link">
@@ -1772,18 +2278,45 @@ window.STJ_CONFIG = {
       $$('[data-tab]', $('#add-box')).forEach((b) => b.addEventListener('click', () => { st.tab = b.dataset.tab; drawAdd(); }));
 
       if (st.tab === 'search') {
-        $('#f-search').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const q = $('#q').value.trim();
-          if (q.length < 2) { toast('พิมพ์คำค้นหาอย่างน้อย 2 ตัวอักษร', 'bad'); return; }
+        let timer = null, seq = 0;
+        const savedMatches = (q) => {
+          const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+          return places.filter((p) => words.every((w) => (p.name + ' ' + (p.address || '')).toLowerCase().includes(w))).slice(0, 3)
+            .map((p) => Object.assign({}, p, { src: 'saved' }));
+        };
+        const run = async (q, btn) => {
+          if (!$('#results')) return;
+          const my = ++seq;
           st.lastQ = q;
-          const btn = e.submitter || $('#f-search button');
-          busy(btn, true, 'กำลังค้นหา…');
-          try { st.results = await API.call('searchPlace', { q }); }
-          catch (err) { toast(err.message, 'bad'); st.results = null; }
-          busy(btn, false);
+          if (q.length < 2) { st.results = null; $('#results').innerHTML = ''; return; }
+          const saved = savedMatches(q);
+          st.results = saved; st.searching = true;
+          $('#results').innerHTML = resultsHtml(); bindResults();
+          if (btn) busy(btn, true, 'กำลังค้นหา…');
+          if (!st.session) st.session = Math.random().toString(36).slice(2) + Date.now().toString(36);
+          try {
+            const r = await API.call('suggestPlace', { q, session: st.session });
+            if (my !== seq) return;
+            const seen = new Set(saved.map((p) => p.name));
+            st.results = saved.concat((r.items || []).filter((x) => !seen.has(x.name)).map((x) => Object.assign({ src: r.source }, x)));
+          } catch (err) { if (my === seq && btn) toast(err.message, 'bad'); }
+          finally { if (btn) busy(btn, false); }
+          st.searching = false;
+          if (my !== seq || !$('#results')) return;
           $('#results').innerHTML = resultsHtml();
           bindResults();
+        };
+        $('#q').addEventListener('input', (e) => {
+          clearTimeout(timer);
+          const q = e.target.value.trim();
+          timer = setTimeout(() => run(q), 550);
+        });
+        $('#f-search').addEventListener('submit', (e) => {
+          e.preventDefault();
+          clearTimeout(timer);
+          const q = $('#q').value.trim();
+          if (q.length < 2) { toast('พิมพ์คำค้นหาอย่างน้อย 2 ตัวอักษร', 'bad'); return; }
+          run(q, e.submitter || $('#f-search button'));
         });
         bindResults();
       } else if (st.tab === 'link') {
@@ -1818,24 +2351,36 @@ window.STJ_CONFIG = {
     function resultsHtml() {
       if (st.results === null) return '';
       const gq = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(st.lastQ || '')}`;
-      if (!st.results.length) return `<div class="banner info">ไม่พบสถานที่ — <a href="${esc(gq)}" target="_blank" rel="noopener">ลองค้นใน Google Maps</a> แล้วคัดลอกลิงก์มาวาง</div>`;
+      const wait = st.searching ? `<div class="muted small" style="display:flex;gap:8px;align-items:center"><span class="spinner sm"></span>กำลังหาจาก Google…</div>` : '';
+      if (!st.results.length) return wait || `<div class="banner info">ไม่พบสถานที่ — <a href="${esc(gq)}" target="_blank" rel="noopener">ลองค้นใน Google Maps</a> แล้วคัดลอกลิงก์มาวางในแท็บ "วางลิงก์"</div>`;
       return st.results.map((r, i) => `<div class="result">
-          <span class="grow"><span class="t">${esc(r.name)}</span><div class="s">${esc(r.address)}</div></span>
-          <a class="btn btn-sm btn-ghost" href="${esc(r.map_url)}" target="_blank" rel="noopener" aria-label="ดู ${esc(r.name)} ใน Google Maps">${icon('external', 16)}</a>
-          <button type="button" class="btn btn-sm btn-primary" data-add-res="${i}">${icon('plus', 16)}เพิ่ม</button></div>`).join('') +
+          <span class="src-ico ${r.src === 'saved' ? 'saved' : ''}" aria-hidden="true">${icon(r.src === 'saved' ? 'clock' : 'pin', 16)}</span>
+          <span class="grow"><span class="t">${esc(r.name)}</span><div class="s">${r.src === 'saved' ? '<b>เคยใช้</b> · ' : ''}${esc(r.address || '')}</div></span>
+          ${r.map_url ? `<a class="btn btn-sm btn-ghost" href="${esc(r.map_url)}" target="_blank" rel="noopener" aria-label="ดู ${esc(r.name)} ใน Google Maps">${icon('external', 16)}</a>` : ''}
+          <button type="button" class="btn btn-sm btn-primary" data-add-res="${i}">${icon('plus', 16)}เพิ่ม</button></div>`).join('') + wait +
         `<a class="small" href="${esc(gq)}" target="_blank" rel="noopener">ไม่ใช่ที่ต้องการ? เปิดค้นใน Google Maps</a>`;
     }
     function bindResults() {
-      $$('[data-add-res]').forEach((b) => b.addEventListener('click', () => addStop(st.results[Number(b.dataset.addRes)])));
+      $$('[data-add-res]').forEach((b) => b.addEventListener('click', async () => {
+        const r = st.results[Number(b.dataset.addRes)];
+        if (r.needs_details) {
+          busy(b, true, '…');
+          try { const d = await API.call('placeDetails', { place_id: r.place_id, session: st.session }); st.session = ''; addStop(d); }
+          catch (e) { toast(e.message, 'bad'); busy(b, false); }
+          return;
+        }
+        addStop(r);
+      }));
     }
     function previewHtml() {
       const p = st.preview;
       if (!p) return '';
       const xy = UI.hasXY(p);
       return `<div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;background:#FAFBFC">
+        ${p.approx ? `<div class="banner info">${icon('search', 18)}<span>ลิงก์นี้ (มักเป็นลิงก์แชร์จาก iPhone) ไม่มีพิกัดในตัว — ระบบหาพิกัดจากชื่อสถานที่ให้แล้ว <b>ตรวจดูหมุดว่าตรงจุดหรือไม่</b> ถ้าไม่ตรงกด "ปรับหมุด"</span></div>` : ''}
         ${xy ? `<iframe class="embed" title="ตัวอย่างตำแหน่ง" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${p.lat},${p.lng}&z=16&output=embed"></iframe>
-               <div class="small muted">พิกัด ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</div>`
-             : '<div class="banner warn">อ่านพิกัดจากลิงก์นี้ไม่ได้ — ยังเพิ่มได้ คนขับจะนำทางด้วยลิงก์เดิม แต่จะไม่แสดงบนแผนที่</div>'}
+               <div class="row" style="align-items:center"><span class="small muted grow">พิกัด ${Number(p.lat).toFixed(6)}, ${Number(p.lng).toFixed(6)}</span><button type="button" class="btn btn-sm" id="pv-pin">${icon('pin', 16)}ปรับหมุด</button></div>`
+             : `<div class="banner warn">${icon('pin', 18)}<span>อ่านพิกัดจากลิงก์นี้ไม่ได้ — <b>ปักหมุดเองบนแผนที่</b> เพื่อให้ขึ้นแผนที่ อยู่ในเส้นทาง และตรวจรัศมีเช็คอินได้</span><button type="button" class="btn btn-sm btn-primary" id="pv-pin">${icon('pin', 16)}ปักหมุดเอง</button></div>`}
         <div class="grid g2">
           <label class="field"><span>ชื่อสถานที่ *</span><input class="input" id="pv-name" value="${esc(p.name)}" placeholder="ตั้งชื่อให้คนขับเข้าใจง่าย" maxlength="120"></label>
           <label class="field"><span>ที่อยู่ / จุดสังเกต</span><input class="input" id="pv-addr" value="${esc(p.address)}" maxlength="250"></label>
@@ -1846,6 +2391,15 @@ window.STJ_CONFIG = {
     function bindPreview() {
       const b = $('#pv-add');
       if (!b) return;
+      const pb = $('#pv-pin');
+      if (pb) pb.addEventListener('click', async () => {
+        const name = $('#pv-name').value.trim(), addr = $('#pv-addr').value.trim();
+        const p = await UI.pickOnMap({ title: 'ปักหมุด · ' + (name || 'สถานที่ใหม่'), lat: st.preview.lat, lng: st.preview.lng, around: st.stops.map((x, k) => Object.assign({}, x, { seq: k + 1 })) });
+        if (!p) return;
+        Object.assign(st.preview, { lat: p.lat, lng: p.lng, approx: false, name, address: addr });
+        $('#preview').innerHTML = previewHtml();
+        bindPreview();
+      });
       b.addEventListener('click', () => {
         const name = $('#pv-name').value.trim();
         if (!name) { toast('กรุณาตั้งชื่อสถานที่', 'bad'); $('#pv-name').focus(); return; }
@@ -1863,6 +2417,8 @@ window.STJ_CONFIG = {
       if (!st.stops.length) return toast('กรุณาเพิ่มสถานที่อย่างน้อย 1 จุด', 'bad');
       const empty = st.stops.findIndex((s) => !String(s.name || '').trim());
       if (empty >= 0) return toast(`สถานที่จุดที่ ${empty + 1} ยังไม่มีชื่อ`, 'bad');
+      const noXY = st.stops.map((s, i) => (UI.hasXY(s) ? null : `${i + 1}. ${s.name}`)).filter(Boolean);
+      if (noXY.length && !(await UI.confirmBox(`มี ${noXY.length} จุดที่ยังไม่มีพิกัด (${noXY.join(', ')}) — จุดนี้จะไม่ขึ้นบนแผนที่ ไม่อยู่ในเส้นทาง และตรวจรัศมีเช็คอินไม่ได้ แนะนำให้กด "หาพิกัดจากชื่อ" หรือ "ปักหมุดเอง" ก่อน`, 'บันทึกทั้งที่ไม่มีพิกัด'))) return;
       $$('[data-save]').forEach((b) => busy(b, true));
       try {
         const saved = await API.call('saveJob', {
@@ -1905,6 +2461,7 @@ window.STJ_CONFIG = {
         </div>
       </div>
       ${job.status === 'cancelled' ? '<div class="banner bad">Job นี้ถูกยกเลิกแล้ว คนขับจะไม่เห็นงานนี้ในแอป</div>' : ''}
+      ${canEdit && job.stops.some((s) => !UI.hasXY(s)) ? `<div class="banner warn">${icon('pin', 18)}<span>มี ${job.stops.filter((s) => !UI.hasXY(s)).length} จุดที่ยังไม่มีพิกัด (${esc(job.stops.filter((s) => !UI.hasXY(s)).map((s) => s.seq + '. ' + s.name).join(', '))}) — จึงไม่ขึ้นบนแผนที่และตรวจรัศมีเช็คอินไม่ได้</span><a href="#/admin/jobs/${esc(job.id)}/edit">แก้ไขเพื่อปักหมุด</a></div>` : ''}
       <div class="split">
         <div class="main">
           <section class="card map-card" aria-label="แผนที่">
@@ -2027,12 +2584,12 @@ window.STJ_CONFIG = {
     function draw() {
       $('#dr-count').textContent = `รายชื่อคนขับ (${list.filter((d) => d.active).length} คนที่ใช้งาน)`;
       if (!list.length) { $('#dr-list').innerHTML = `<div class="empty">${icon('users', 36)}<div>ยังไม่มีคนขับ</div><button type="button" class="btn btn-primary btn-sm" data-add2>${icon('plus', 16)}เพิ่มคนขับ</button></div>`; $('[data-add2]').addEventListener('click', () => editDriver(null)); return; }
-      $('#dr-list').innerHTML = `<div class="table-wrap"><table class="tbl" style="min-width:600px"><thead><tr><th>คนขับ</th><th>เบอร์โทร</th><th>สถานะ</th><th style="text-align:right;padding-right:20px">จัดการ</th></tr></thead><tbody>
+      $('#dr-list').innerHTML = `<div class="table-wrap"><table class="tbl stack" style="min-width:600px"><thead><tr><th>คนขับ</th><th>เบอร์โทร</th><th>สถานะ</th><th style="text-align:right;padding-right:20px">จัดการ</th></tr></thead><tbody>
         ${list.map((d, i) => `<tr>
           <td><div style="display:flex;align-items:center;gap:12px">${UI.avatar(d.name, d.photo_url, 44)}<div><b>${esc(d.name)}</b><div class="small muted">เพิ่มเมื่อ ${esc(d.created_at ? UI.fmtDate(d.created_at, { short: true, noDay: true }) : '-')}</div></div></div></td>
-          <td>${d.phone ? `<a href="tel:${esc(d.phone)}">${esc(d.phone)}</a>` : '<span class="muted">-</span>'}</td>
-          <td>${d.active ? '<span class="chip st-done">ใช้งาน</span>' : '<span class="chip st-cancelled">ปิดใช้งาน</span>'}</td>
-          <td style="text-align:right;padding-right:20px;white-space:nowrap">
+          <td data-label="เบอร์โทร">${d.phone ? `<a href="tel:${esc(d.phone)}">${esc(d.phone)}</a>` : '<span class="muted">-</span>'}</td>
+          <td data-label="สถานะ">${d.active ? '<span class="chip st-done">ใช้งาน</span>' : '<span class="chip st-cancelled">ปิดใช้งาน</span>'}</td>
+          <td class="st-actions" style="text-align:right;padding-right:20px;white-space:nowrap">
             <button type="button" class="btn btn-sm" data-act="edit" data-i="${i}">${icon('edit', 16)}แก้ไข</button>
             <button type="button" class="btn btn-sm" data-act="pin" data-i="${i}">${icon('key', 16)}ตั้ง PIN ใหม่</button>
             <button type="button" class="btn btn-sm ${d.active ? 'btn-danger' : ''}" data-act="toggle" data-i="${i}">${d.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}</button>
@@ -2201,6 +2758,26 @@ window.STJ_CONFIG = {
           <span class="hint muted small">ถ่ายรูปได้สูงสุด 5 รูปต่อจุด · ระบบบันทึกตำแหน่งและระยะห่างจากจุดนัดทุกครั้ง</span>
           <button class="btn btn-primary" type="submit">บันทึก</button>
         </form>
+        <form class="card card-pad" id="st-daily" style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="font-size:18px">ตรวจความพร้อม & GPS คนขับ</h2>
+          <label class="switch-row"><input type="checkbox" name="daily"><span><b>บังคับตรวจความพร้อมประจำวัน</b>
+            <span class="hint">คนขับถ่ายรูปรถ 3 รูป (ภายนอก · ป้ายทะเบียน · ภายใน) และติ๊กยืนยันข้อมูล วันละครั้ง ก่อนเช็คอินจุดแรก</span></span></label>
+          <label class="switch-row"><input type="checkbox" name="gps"><span><b>ส่งตำแหน่ง GPS ของคนขับ</b>
+            <span class="hint">ส่งเฉพาะตอนคนขับเปิดแอปไว้ (ล็อกจอหรือสลับไปแอปอื่นจะหยุดส่งชั่วคราว) · ดูตำแหน่งล่าสุดได้ที่หน้า ภาพรวม</span></span></label>
+          <label class="field"><span>ส่งตำแหน่งทุก</span><select class="input" name="gpsmin">${[2, 3, 5, 10].map((n) => `<option value="${n}">${n} นาที</option>`).join('')}</select></label>
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </form>
+        <form class="card card-pad" id="st-places" style="display:flex;flex-direction:column;gap:14px" autocomplete="off">
+          <h2 style="font-size:18px">ค้นหาสถานที่แบบ Google Maps <span class="muted" style="font-weight:500;font-size:14px">(ไม่บังคับ)</span></h2>
+          <div class="hint muted small">ตอนนี้ใช้การค้นหาฟรีของ Google ซึ่งค้นชื่อร้านหรือชื่อย่อได้ไม่เก่งเท่าแอป Google Maps · ใส่ Google Places API key เพื่อให้คำแนะนำขณะพิมพ์เหมือน Google Maps — ใช้ฟรีประมาณ 5,000 ครั้ง/เดือน แต่ต้องเปิดบัญชี Google Cloud และผูกบัตร</div>
+          <div id="pl-status"></div>
+          <label class="field"><span>Google Places API key</span><input class="input mono" name="key" autocomplete="off" spellcheck="false" placeholder="AIza…"></label>
+          <details class="small"><summary style="cursor:pointer;font-weight:600">วิธีขอ API key (5 ขั้นตอน)</summary>
+            <ol class="steps-mini" style="margin-top:8px"><li>เข้า <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> แล้วสร้างโปรเจกต์ใหม่</li>
+              <li>เปิดการเรียกเก็บเงิน (Billing) และผูกบัตร</li><li>เมนู APIs &amp; Services › Library › เปิดใช้ "Places API (New)"</li>
+              <li>Credentials › Create credentials › API key › กด Restrict key ให้ใช้ได้เฉพาะ Places API (New)</li><li>คัดลอก key มาวางที่นี่ แล้วกด บันทึกและทดสอบ</li></ol></details>
+          <div class="actions"><button class="btn btn-primary" type="submit">บันทึกและทดสอบ</button><button type="button" class="btn btn-danger hidden" data-rmkey>ลบ key</button></div>
+        </form>
         <form class="card card-pad" id="st-pin" style="display:flex;flex-direction:column;gap:14px" autocomplete="off">
           <h2 style="font-size:18px">เปลี่ยน PIN แอดมิน</h2>
           <label class="field"><span>PIN เดิม</span><input class="input mono" type="password" name="old" inputmode="numeric" maxlength="6" required></label>
@@ -2241,6 +2818,14 @@ window.STJ_CONFIG = {
         $('#st-ver').textContent = p.version;
         const ri = $('#st-radius [name=radius]');
         if (ri && ri.value === '') ri.value = p.checkin_radius_m === undefined ? 100 : p.checkin_radius_m;
+        const fd = $('#st-daily');
+        if (fd && !fd.dataset.loaded) {
+          fd.dataset.loaded = '1';
+          fd.daily.checked = p.daily_check !== false; fd.gps.checked = p.gps_tracking !== false;
+          fd.gpsmin.value = String(p.gps_interval_min || 3);
+          if (!fd.gpsmin.value) { fd.gpsmin.insertAdjacentHTML('beforeend', `<option value="${p.gps_interval_min}">${p.gps_interval_min} นาที</option>`); fd.gpsmin.value = String(p.gps_interval_min); }
+        }
+        placesStatus(!!p.places_api);
         return p;
       }
       catch (e) { $('#st-ver').textContent = 'เชื่อมต่อไม่ได้'; throw e; }
@@ -2258,6 +2843,38 @@ window.STJ_CONFIG = {
       App.state.setupFrom = API.isDemo() ? '' : API.apiUrl();
       API.clearSession();
       location.hash = '#/setup';
+    });
+    function placesStatus(on) {
+      const el = $('#pl-status');
+      if (!el) return;
+      el.innerHTML = on ? `<div class="banner good">${icon('check', 18)}ใช้ Google Places อยู่ — คำแนะนำขณะพิมพ์เหมือน Google Maps</div>`
+        : `<div class="banner info">${icon('search', 18)}ใช้การค้นหาฟรี (ไม่ได้ใส่ API key)</div>`;
+      $('#st-places [data-rmkey]').classList.toggle('hidden', !on);
+    }
+    $('#st-daily').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target, btn = f.querySelector('button[type=submit]');
+      busy(btn, true);
+      try {
+        const r = await API.call('saveSettings', { daily_check: f.daily.checked, gps_tracking: f.gps.checked, gps_interval_min: Number(f.gpsmin.value) });
+        toast(`บันทึกแล้ว · ${r.daily_check ? 'บังคับตรวจความพร้อม' : 'ไม่บังคับตรวจความพร้อม'} · ${r.gps_tracking ? 'ส่ง GPS ทุก ' + r.gps_interval_min + ' นาที' : 'ปิด GPS'}`, 'good');
+      } catch (err) { toast(err.message, 'bad'); }
+      busy(btn, false);
+    });
+    $('#st-places').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target, btn = f.querySelector('button[type=submit]');
+      const key = f.key.value.trim();
+      if (!key) return toast('กรุณาวาง API key', 'bad');
+      busy(btn, true, 'กำลังทดสอบ…');
+      try { const r = await API.call('saveSettings', { places_api_key: key }); f.key.value = ''; placesStatus(r.places_api); toast('ทดสอบผ่าน บันทึก API key แล้ว', 'good'); }
+      catch (err) { toast(err.message, 'bad'); }
+      busy(btn, false);
+    });
+    $('#st-places [data-rmkey]').addEventListener('click', async (e) => {
+      if (!(await UI.confirmBox('ลบ Google Places API key และกลับไปใช้การค้นหาฟรี?', 'ลบ key', true))) return;
+      try { const r = await API.call('saveSettings', { places_api_key: '' }); placesStatus(r.places_api); toast('ลบ key แล้ว', 'good'); }
+      catch (err) { toast(err.message, 'bad'); }
     });
     $$('#st-radius [data-r]').forEach((b) => b.addEventListener('click', () => { $('#st-radius [name=radius]').value = b.dataset.r; }));
     $('#st-radius').addEventListener('submit', async (e) => {
@@ -2300,72 +2917,193 @@ window.STJ_CONFIG = {
 
 </script>
 <script>/* ---- assets/driver.js ---- */
-/* หน้าจอฝั่งคนขับ (มือถือ) */
+/* หน้าจอฝั่งคนขับ (มือถือ): แผนงาน · ตรวจความพร้อม & GPS · ฉัน */
 (function () {
   'use strict';
   const { $, $$, esc, icon, chip, toast, busy } = UI;
   const V = (window.Views = window.Views || {});
-
-  function head(inner) { return `<header class="d-head">${inner}</header>`; }
-  function mount(html) {
-    $('#app').innerHTML = `<div class="phone">${App.demoBar()}${html}</div>`;
-    App.bindCommon();
-  }
   const loading = (t) => `<div class="loading-block"><span class="spinner"></span>${esc(t || 'กำลังโหลด…')}</div>`;
 
-  /* ====================== งานของฉัน ====================== */
-  V.driverHome = async function () {
-    const s = API.session();
-    mount(head(`<div class="row1">
-        ${UI.avatar(s.user.name, s.user.photo_url, 44, 'border:2px solid rgba(255,255,255,.25)')}
-        <div style="flex:1 1 auto;min-width:0"><h1>สวัสดี ${esc(s.user.name)}</h1><div class="sub">${esc(UI.fmtDate(UI.today()))} · ${esc(s.company || '')}</div></div>
-        <button type="button" class="icon-btn" id="h-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>
-        <button type="button" class="icon-btn" data-logout aria-label="ออกจากระบบ">${icon('logout')}</button>
-      </div>`) + `<main class="d-body" id="h-body">${loading()}</main>`);
+  /* ====================== ข้อมูลประจำวัน (ตรวจความพร้อม / ตั้งค่า GPS) ====================== */
+  const Day = {
+    data: null, at: 0, token: '',
+    async get(force) {
+      const s = API.session();
+      const tk = s ? s.token : '';
+      if (!force && this.data && this.token === tk && Date.now() - this.at < 90000 && this.data.date === UI.today()) return this.data;
+      const d = await API.call('myDay');
+      this.set(d, tk);
+      return d;
+    },
+    set(d, tk) {
+      this.data = d; this.at = Date.now(); this.token = tk || (API.session() || {}).token || '';
+      Track.configure(d);
+      paintChrome();
+    },
+    peek() { const s = API.session(); return this.data && s && this.token === s.token ? this.data : null; },
+    needCheck() { const d = this.peek(); return !!(d && d.daily_check && !d.check); }
+  };
 
-    async function load() {
-      const btn = $('#h-refresh');
+  /* ====================== ส่งตำแหน่ง GPS (เฉพาะตอนเปิดแอปนี้อยู่) ====================== */
+  const Track = {
+    timer: null, enabled: false, interval: 3, state: 'idle', last: null, lastAcc: null, msg: '', busy: false,
+    configure(d) {
+      this.interval = Number(d.gps_interval_min) || 3;
+      this.enabled = !!d.gps_tracking && (!d.daily_check || !!d.check);
+      if (!d.gps_tracking) this.state = 'off';
+      else if (!this.enabled) this.state = 'wait';
+      if (this.enabled) this.start(); else this.stop();
+    },
+    start() {
+      if (this.timer) return;
+      this.onVis = () => { if (document.visibilityState === 'visible') this.tick(); };
+      document.addEventListener('visibilitychange', this.onVis);
+      this.timer = setInterval(() => this.tick(), 30000);
+      this.tick();
+    },
+    stop() {
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
+      if (this.onVis) document.removeEventListener('visibilitychange', this.onVis);
+    },
+    position(timeout) {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject(Object.assign(new Error('อุปกรณ์นี้ไม่รองรับการหาตำแหน่ง'), { code: 2 }));
+        navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+          (e) => reject(e), { enableHighAccuracy: true, timeout: timeout || 20000, maximumAge: 30000 });
+      });
+    },
+    async tick(force) {
+      const s = API.session();
+      if (!s || s.role !== 'driver') { this.stop(); return; }
+      if (!force && (!this.enabled || document.visibilityState !== 'visible')) return;
+      if (!force && this.last && Date.now() - this.last < this.interval * 60000 - 5000) return;
+      if (this.busy) return;
+      this.busy = true;
+      if (!this.last) { this.state = 'locating'; paintChrome(); }
+      try {
+        const p = await this.position();
+        const r = await API.call('reportLocation', { lat: p.lat, lng: p.lng, acc: p.acc, force: !!force, source: force ? 'manual' : 'gps' }, { noRetry: true });
+        if (r.reason === 'off') { this.state = 'off'; this.enabled = false; this.stop(); }
+        else { this.state = 'on'; this.last = Date.now(); this.lastAcc = Math.round(p.acc); this.msg = ''; }
+      } catch (e) {
+        if (e && e.code === 1 && !(e instanceof API.ApiError)) { this.state = 'denied'; this.msg = 'ยังไม่ได้อนุญาตให้แอปเข้าถึงตำแหน่ง'; }
+        else { this.state = this.last ? 'on' : 'error'; this.msg = e.message || 'ส่งตำแหน่งไม่สำเร็จ'; }
+      } finally {
+        this.busy = false;
+        paintChrome();
+      }
+    },
+    label() {
+      return { on: 'GPS', locating: 'GPS', wait: 'GPS', off: 'GPS ปิด', denied: 'GPS', error: 'GPS', idle: 'GPS' }[this.state] || 'GPS';
+    }
+  };
+
+  /* อัปเดตป้าย GPS และจุดแจ้งเตือนเมนู โดยไม่ต้องวาดหน้าใหม่ */
+  function paintChrome() {
+    $$('.gps-pill').forEach((el) => {
+      el.className = 'gps-pill ' + Track.state;
+      el.querySelector('span').textContent = Track.label();
+      el.title = { on: 'กำลังส่งตำแหน่งให้แอดมิน', locating: 'กำลังหาตำแหน่ง', wait: 'จะเริ่มส่งตำแหน่งหลังตรวจความพร้อม', off: 'แอดมินปิดการส่งตำแหน่ง', denied: 'ไม่ได้รับอนุญาตให้ใช้ตำแหน่ง', error: 'ส่งตำแหน่งไม่สำเร็จ' }[Track.state] || '';
+    });
+    $$('.d-nav [data-tab="check"]').forEach((el) => el.classList.toggle('alert', Day.needCheck()));
+    const sub = $('#d-hsub');
+    const d = Day.peek();
+    if (sub && d) {
+      const plate = d.check ? d.check.plate : d.plate;
+      sub.textContent = [plate ? 'ทะเบียน ' + plate : '', d.company].filter(Boolean).join(' · ');
+    }
+    if (typeof Day.onPaint === 'function') Day.onPaint();
+  }
+
+  /* ====================== โครงหน้าคนขับ: หัว + เมนูด้านล่าง ====================== */
+  function mount(tab, body, opts) {
+    opts = opts || {};
+    const s = API.session();
+    const d = Day.peek();
+    const plate = d ? (d.check ? d.check.plate : d.plate) : '';
+    const tabs = [['plan', '#/driver', 'แผนงาน', 'calendar'], ['check', '#/driver/check', 'ตรวจความพร้อม', 'shield'], ['me', '#/driver/me', 'ฉัน', 'user']];
+    $('#app').innerHTML = `<div class="phone has-nav">${App.demoBar()}
+      <div class="d-top"><header class="d-hcard">
+        ${opts.back ? `<a class="icon-btn" href="${esc(opts.back)}" aria-label="ย้อนกลับ">${icon('back', 22)}</a>` : UI.avatar(s.user.name, s.user.photo_url, 44, 'border:2px solid rgba(255,255,255,.25)')}
+        <div class="t"><h1 id="d-htitle">${esc(opts.title || s.user.name)}</h1><div class="sub" id="d-hsub">${esc(opts.sub || [plate ? 'ทะเบียน ' + plate : '', s.company].filter(Boolean).join(' · '))}</div></div>
+        <a class="gps-pill ${Track.state}" href="#/driver/check" aria-label="สถานะ GPS"><i></i><span>${esc(Track.label())}</span></a>
+        ${opts.refresh ? `<button type="button" class="icon-btn" id="d-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>` : ''}
+      </header></div>
+      <main class="d-body" id="d-body">${body || loading()}</main>
+      <nav class="d-nav" aria-label="เมนูคนขับ">${tabs.map(([k, h, t, ic]) =>
+        `<a href="${h}" data-tab="${k}" class="${k === tab ? 'on' : ''}" ${k === tab ? 'aria-current="page"' : ''}>${icon(ic, 20)}<span>${t}</span></a>`).join('')}</nav>
+    </div>`;
+    App.bindCommon();
+    paintChrome();
+  }
+
+  /* ====================== แท็บ: แผนงาน (ไทม์ไลน์) ====================== */
+  V.driverHome = async function () {
+    mount('plan', loading(), { refresh: true });
+    Day.onPaint = null;
+
+    async function load(force) {
+      const btn = $('#d-refresh');
       if (btn) btn.disabled = true;
       try {
-        const jobs = await API.call('listJobs');
+        const [jobs] = await Promise.all([API.call('listJobs'), Day.get(force).catch(() => null)]);
         draw(jobs);
       } catch (e) {
-        $('#h-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><button class="btn" id="h-retry">ลองใหม่</button>`;
-        $('#h-retry').addEventListener('click', load);
-      } finally { if (btn) btn.disabled = false; }
+        if (!$('#d-body')) return;
+        $('#d-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><button class="btn btn-lg" id="h-retry">${icon('refresh', 18)}ลองใหม่</button>`;
+        $('#h-retry').addEventListener('click', () => load(true));
+      } finally { const b = $('#d-refresh'); if (b) b.disabled = false; }
+    }
+    function startTime(j) {
+      if (j.time) return j.time;
+      const s = (j.stops || []).find((x) => x.planned_time);
+      return s ? s.planned_time : '';
+    }
+    function item(j) {
+      const nx = UI.nextStop(j);
+      const done = j.status === 'done';
+      const cls = done ? 'done' : j.status === 'in_progress' ? 'now' : 'wait';
+      const label = done ? 'เสร็จแล้ว' : j.status === 'in_progress' ? `กำลังทำ · ${j.done_count}/${j.total_count} จุด` : 'รอเริ่มงาน';
+      const route = (j.stops || []).length > 1 ? `${j.stops[0].name} → ${j.stops[j.stops.length - 1].name}` : ((j.stops || [])[0] || {}).name || '';
+      return `<a class="tl2-item ${cls}" href="#/driver/job/${esc(j.id)}">
+        <span class="tl2-time">${esc(startTime(j) || '--:--')}</span>
+        <span class="tl2-dot" aria-hidden="true">${done ? icon('check', 16, 'stroke-width="3"') : ''}</span>
+        <span class="tl2-body">
+          <span class="tl2-st">${esc(label)}</span>
+          <span class="tl2-title">${esc(j.title || route)}</span>
+          ${j.title && route ? `<span class="tl2-sub">${esc(route)}</span>` : ''}
+          <span class="tl2-sub">${esc(j.plate)} · ${j.total_count} จุด${!done && nx && j.status === 'in_progress' ? ' · ถัดไป: ' + esc(nx.name) : ''}</span>
+        </span>
+        <span class="tl2-go" aria-hidden="true">${icon('back', 18, 'style="transform:rotate(180deg)"')}</span>
+      </a>`;
     }
     function draw(jobs) {
+      if (!$('#d-body')) return;
       const t = UI.today();
-      const groups = [
-        ['กำลังทำ', jobs.filter((j) => j.status === 'in_progress')],
-        ['ค้างจากวันก่อน', jobs.filter((j) => j.status === 'pending' && j.date < t)],
-        ['งานวันนี้', jobs.filter((j) => j.status === 'pending' && j.date === t)],
-        ['งานล่วงหน้า', jobs.filter((j) => j.status === 'pending' && j.date > t)],
-        ['เสร็จแล้ว', jobs.filter((j) => j.status === 'done' && j.date >= UI.addDays(t, -1)).reverse()]
-      ];
+      const today = jobs.filter((j) => j.date === t);
+      const late = jobs.filter((j) => j.date < t && j.status !== 'done');
+      const ahead = jobs.filter((j) => j.date > t);
+      const doneN = today.filter((j) => j.status === 'done').length;
       let html = '';
-      groups.forEach(([label, list]) => {
-        if (!list.length) return;
-        html += `<div class="d-sec">${label} (${list.length})</div>` + list.map(card).join('');
+      if (Day.needCheck()) {
+        html += `<a class="ready-banner" href="#/driver/check">${icon('shield', 26)}<span><b>ยังไม่ได้ตรวจความพร้อมวันนี้</b><span>ถ่ายรูปรถ 3 รูป และยืนยันข้อมูลก่อนเริ่มงาน</span></span><span class="btn btn-sm btn-primary">ตรวจเลย</span></a>`;
+      }
+      if (late.length) {
+        html += `<div class="tl2-head"><h2>ค้างจากวันก่อน</h2><span>${late.length} งาน</span></div><div class="tl2">${late.map(item).join('')}</div>`;
+      }
+      html += `<div class="tl2-head"><h2>แผนงานวันนี้</h2><span>เสร็จ ${doneN} จาก ${today.length} งาน</span></div>`;
+      html += today.length ? `<div class="tl2">${today.map(item).join('')}</div>`
+        : `<div class="empty card">${icon('calendar', 40)}<b style="color:var(--ink)">วันนี้ยังไม่มีงาน</b><div>เมื่อแอดมินมอบหมายงาน จะแสดงที่นี่ — กดรีเฟรชเพื่อดูงานใหม่</div></div>`;
+      const days = {};
+      ahead.forEach((j) => { (days[j.date] = days[j.date] || []).push(j); });
+      Object.keys(days).sort().forEach((d) => {
+        html += `<div class="tl2-head"><h2>${esc(UI.relDay(d))}</h2><span>${days[d].length} งาน</span></div><div class="tl2">${days[d].map(item).join('')}</div>`;
       });
-      if (!html) html = `<div class="empty" style="background:#fff;border-radius:16px;border:1px solid var(--line)">${icon('van', 44)}<b style="color:var(--ink)">ยังไม่มีงาน</b><div>เมื่อแอดมินมอบหมายงาน จะแสดงที่นี่ — กดรีเฟรชเพื่อดูงานใหม่</div></div>`;
-      $('#h-body').innerHTML = html + `<div class="muted small" style="text-align:center">อัปเดตล่าสุด ${UI.bkkNow().time} น.</div>`;
+      html += `<div class="muted small" style="text-align:center">อัปเดตล่าสุด ${UI.bkkNow().time} น.</div>`;
+      $('#d-body').innerHTML = html;
     }
-    function card(j) {
-      const nx = UI.nextStop(j);
-      const active = j.status === 'in_progress';
-      const label = active ? 'ทำงานต่อ' : j.status === 'pending' ? 'เริ่มงาน' : 'ดูรายละเอียด';
-      return `<article class="d-card ${active ? 'active' : ''}">
-        <div class="top"><span class="mono small muted">${esc(j.job_no)}</span>${chip(j.status)}</div>
-        <div style="display:flex;gap:12px;align-items:center">${UI.vehicleThumb(j.vehicle_photo_url, 64, 44)}<div class="title" style="min-width:0">${esc(UI.jobTitle(j))}</div></div>
-        <div class="muted small">${esc(UI.relDay(j.date))}${j.time ? ' · เริ่ม ' + esc(j.time) + ' น.' : ''} · ทะเบียน <b class="mono" style="color:var(--ink)">${esc(j.plate)}</b> · ${j.total_count} จุด</div>
-        ${j.status !== 'pending' ? `<div style="display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">${nx ? 'ถัดไป: ' + esc(nx.name) : 'ครบทุกจุดแล้ว'}</span><b>${j.done_count}/${j.total_count}</b></div>${UI.progressBar(j)}</div>`
-          : (nx ? `<div class="small">จุดแรก: <b>${esc(nx.name)}</b>${nx.planned_time ? ' · นัด ' + esc(nx.planned_time) : ''}</div>` : '')}
-        <a class="btn ${j.status === 'done' ? '' : 'btn-primary'} btn-lg btn-block" href="#/driver/job/${esc(j.id)}">${label}</a>
-      </article>`;
-    }
-    $('#h-refresh').addEventListener('click', load);
+    $('#d-refresh').addEventListener('click', () => load(true));
     const onVis = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', onVis);
     App.onLeave(() => document.removeEventListener('visibilitychange', onVis));
@@ -2376,21 +3114,20 @@ window.STJ_CONFIG = {
   V.driverJob = async function (params) {
     const id = params[0];
     const st = { job: null, focus: null };
-    mount(head(`<div class="row1">
-        <a class="icon-btn" href="#/driver" aria-label="กลับไปหน้างานของฉัน">${icon('back', 22)}</a>
-        <div style="flex:1 1 auto;min-width:0" id="j-head"><h1 style="font-size:18px">กำลังโหลด…</h1></div>
-        <button type="button" class="icon-btn" id="j-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>
-      </div>`) + `<main class="d-body" id="j-body">${loading()}</main>`);
+    mount('plan', loading(), { back: '#/driver', title: 'กำลังโหลด…', sub: ' ', refresh: true });
+    Day.onPaint = null;
+    Day.get().then(() => { if (st.job && $('#j-check-area')) draw(); }).catch(() => {});
 
     async function load() {
       try { st.job = await API.call('getJob', { id }); draw(); }
-      catch (e) { $('#j-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><a class="btn" href="#/driver">กลับ</a>`; }
+      catch (e) { if ($('#d-body')) $('#d-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><a class="btn btn-lg" href="#/driver">กลับไปแผนงาน</a>`; }
     }
 
     function draw() {
       const j = st.job;
-      $('#j-head').innerHTML = `<h1 style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(UI.jobTitle(j))}</h1>
-        <div class="sub"><span class="mono">${esc(j.job_no)}</span> · ${esc(j.plate)}</div>`;
+      if (!$('#d-body')) return;
+      $('#d-htitle').textContent = UI.jobTitle(j);
+      $('#d-hsub').innerHTML = `<span class="mono">${esc(j.job_no)}</span> · ${esc(j.plate)}`;
       const pending = j.stops.filter((s) => s.status !== 'arrived');
       const cur = j.status === 'cancelled' ? null : (pending.find((s) => s.id === st.focus) || pending[0] || null);
       let html = '';
@@ -2404,9 +3141,10 @@ window.STJ_CONFIG = {
         html += `<div class="done-card"><div class="done-ico">${icon('check', 36, 'stroke-width="2.6"')}</div>
           <b style="font-size:22px">ปิดงานเรียบร้อย</b>
           <span class="muted">เช็คอินครบ ${j.total_count} จุด${j.finished_at ? ' · เสร็จ ' + esc(UI.hhmm(j.finished_at)) + ' น.' : ''}</span>
-          <a class="btn btn-primary btn-lg btn-block" href="#/driver">กลับไปหน้างานของฉัน</a></div>`;
+          <a class="btn btn-primary btn-lg btn-block" href="#/driver">กลับไปแผนงาน</a></div>`;
       } else {
         const idx = j.stops.indexOf(cur) + 1;
+        const needCheck = Day.needCheck();
         html += `<section class="cur-stop" aria-label="จุดปัจจุบัน">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
             <span style="font-weight:600;color:var(--brand)">จุดที่ ${idx} จาก ${j.total_count}</span>
@@ -2416,10 +3154,14 @@ window.STJ_CONFIG = {
           ${cur.note ? `<div class="banner warn" style="padding:10px 12px">${icon('note', 18)}${esc(cur.note)}</div>` : ''}
           <div class="grid g2 keep" style="gap:10px">
             <a class="btn btn-lg" href="${esc(UI.navUrl(cur))}" target="_blank" rel="noopener">${icon('nav')}นำทาง</a>
-            <a class="btn btn-lg" href="${esc(UI.routeUrl(pending))}" target="_blank" rel="noopener">${icon('route')}ทั้งเส้นทาง</a>
+            <a class="btn btn-lg" href="${esc(UI.routeUrl([cur].concat(pending.filter((s) => s !== cur)), { fromHere: true }))}" target="_blank" rel="noopener">${icon('route')}ทั้งเส้นทาง</a>
           </div>
-          <button type="button" class="btn btn-primary btn-block big-check" id="btn-check">${icon('camera', 24)}ถึงแล้ว · ถ่ายรูปเช็คอิน</button>
-          <div class="muted small" style="text-align:center">${radiusText(j, cur)}</div>
+          <div id="j-check-area">${needCheck
+            ? `<a class="btn btn-primary btn-block big-check" href="#/driver/check?next=${esc(j.id)}">${icon('shield', 24)}ตรวจความพร้อมก่อนเริ่มงาน</a>
+               <div class="muted small" style="text-align:center;margin-top:8px">ต้องตรวจความพร้อมประจำวัน (ถ่ายรูปรถ 3 รูป) ก่อนเช็คอินจุดแรก</div>`
+            : `<button type="button" class="btn btn-primary btn-block big-check" id="btn-check">${icon('camera', 24)}ถึงแล้ว · ถ่ายรูปเช็คอิน</button>
+               <div class="muted small" style="text-align:center;margin-top:8px">${radiusText(j, cur)}</div>`}</div>
+          <div class="muted small" style="text-align:center">"ทั้งเส้นทาง" เริ่มจากตำแหน่งปัจจุบัน → ${pending.length > 1 ? `จุดที่ ${idx} → … ตามลำดับ` : `จุดที่ ${idx}`}</div>
         </section>`;
       }
 
@@ -2435,7 +3177,7 @@ window.STJ_CONFIG = {
           </div>`;
         }).join('')}</section>
         <section class="card map-card" aria-label="แผนที่"><div class="map xs" id="j-map"></div></section>`;
-      $('#j-body').innerHTML = html;
+      $('#d-body').innerHTML = html;
       UI.renderMap($('#j-map'), j.stops, { polyline: j.route_polyline, markNext: true });
       $$('[data-focus]').forEach((b) => b.addEventListener('click', () => { st.focus = b.dataset.focus; draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
       const btn = $('#btn-check');
@@ -2449,7 +3191,7 @@ window.STJ_CONFIG = {
       const demo = API.isDemo();
       const ck = { photos: [], pos: null, geoErr: '', watch: null, map: null, me: null, sending: false };
       const m = UI.modal({
-        title: `เช็คอิน · ${stop.name}`,
+        title: `เช็คอิน · ${stop.name}`, full: true,
         body: `<div class="geo-box wait" id="ci-geo" role="status"></div>
           ${pinned && window.L ? '<div class="mini-map" id="ci-map" aria-label="แผนที่ตำแหน่งปัจจุบันเทียบกับจุดนัด"></div>' : ''}
           <div>
@@ -2564,7 +3306,24 @@ window.STJ_CONFIG = {
           draw();
           window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) {
-          toast(err.message, 'bad');
+          if (err.code === 'NEED_DAILY') {
+            m.close(); toast(err.message, 'bad');
+            Day.get(true).catch(() => {});
+            location.hash = '#/driver/check?next=' + encodeURIComponent(job.id);
+            return;
+          }
+          if (err.code === 'NETWORK' || err.code === 'TIMEOUT' || err.code === 'BAD_RESPONSE') {
+            // สัญญาณหลุดระหว่างส่ง: เช็คก่อนว่าระบบได้รับแล้วหรือยัง จะได้ไม่ต้องถ่ายใหม่
+            try {
+              const fresh = await API.call('getJob', { id: job.id });
+              const s2 = fresh.stops.find((x) => x.id === stop.id);
+              if (s2 && s2.status === 'arrived') {
+                st.job = fresh; m.close(); st.focus = null;
+                toast(`เช็คอิน "${stop.name}" แล้ว`, 'good'); draw(); return;
+              }
+            } catch (e2) { /* ยังออฟไลน์ */ }
+            toast('ส่งไม่สำเร็จเพราะสัญญาณอินเทอร์เน็ต — รูปยังอยู่ กด "ยืนยันเช็คอิน" อีกครั้ง', 'bad');
+          } else toast(err.message, 'bad');
           ck.sending = false;
           busy(ok, false);
           refresh();
@@ -2575,8 +3334,220 @@ window.STJ_CONFIG = {
       startWatch();
     }
 
-    $('#j-refresh').addEventListener('click', load);
+    $('#d-refresh').addEventListener('click', load);
     load();
+  };
+
+  /* ====================== แท็บ: ตรวจความพร้อม & GPS ====================== */
+  const CHECK_ITEMS = [['name', 'ชื่อคนขับถูกต้อง'], ['phone', 'เบอร์โทรถูกต้อง'], ['vehicle', 'รถและทะเบียนถูกต้อง'], ['gps', 'ยินยอมเปิด GPS ระหว่างปฏิบัติงาน']];
+
+  V.driverCheck = async function (params, query) {
+    const next = query && query.get('next');
+    mount('check', loading(), { refresh: true });
+    let d;
+    async function load(force) {
+      try { d = await Day.get(force); draw(); }
+      catch (e) {
+        if (!$('#d-body')) return;
+        $('#d-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><button class="btn btn-lg" id="c-retry">${icon('refresh', 18)}ลองใหม่</button>`;
+        $('#c-retry').addEventListener('click', () => load(true));
+      }
+    }
+    $('#d-refresh').addEventListener('click', () => load(true));
+
+    function gpsCard() {
+      const stTxt = {
+        on: ['good', 'กำลังส่งตำแหน่งให้แอดมิน'],
+        locating: ['wait', 'กำลังหาตำแหน่ง…'],
+        wait: ['wait', d && d.daily_check && !d.check ? 'จะเริ่มส่งตำแหน่งหลังตรวจความพร้อม' : 'รอเริ่มส่งตำแหน่ง'],
+        off: ['wait', 'แอดมินปิดการส่งตำแหน่งไว้'],
+        denied: ['bad', 'ยังไม่ได้อนุญาตให้ใช้ตำแหน่ง'],
+        error: ['bad', 'ส่งตำแหน่งไม่สำเร็จ'],
+        idle: ['wait', 'ยังไม่เริ่มส่งตำแหน่ง']
+      }[Track.state] || ['wait', ''];
+      return `<section class="card card-pad gps-card" id="gps-card">
+        <div class="gps-row"><span class="gps-ico ${stTxt[0]}">${icon('gps', 24)}</span>
+          <div style="flex:1 1 auto;min-width:0"><b>ตำแหน่ง GPS</b><div class="small ${stTxt[0] === 'bad' ? '' : 'muted'}" style="${stTxt[0] === 'bad' ? 'color:var(--bad-ink)' : ''}">${esc(stTxt[1])}</div></div>
+          ${Track.state !== 'off' ? `<button type="button" class="btn btn-sm" id="gps-now">${icon('crosshair', 16)}ส่งตอนนี้</button>` : ''}</div>
+        ${Track.last ? `<div class="small">ส่งล่าสุด <b>${esc(new Date(Track.last + 7 * 3600000).toISOString().slice(11, 16))} น.</b>${Track.lastAcc ? ' · ความแม่นยำ ±' + Track.lastAcc + ' ม.' : ''} · ส่งทุก ${Track.interval} นาที</div>` : ''}
+        ${Track.state === 'denied' ? `<div class="banner warn small">${icon('pin', 16)}<span>เปิดสิทธิ์ตำแหน่ง: iPhone ไปที่ การตั้งค่า › ความเป็นส่วนตัว › บริการหาตำแหน่ง › Safari = "ขณะใช้แอป" · Android แตะรูปแม่กุญแจข้างลิงก์ › สิทธิ์ › ตำแหน่ง › อนุญาต</span></div>` : ''}
+        ${Track.msg && Track.state !== 'denied' ? `<div class="small" style="color:var(--bad-ink)">${esc(Track.msg)}</div>` : ''}
+        <div class="small muted">ระบบส่งตำแหน่งเฉพาะตอนเปิดแอปนี้ไว้ — ถ้าล็อกจอหรือสลับไปแอปอื่น (เช่น Google Maps) จะหยุดส่งชั่วคราว และส่งต่อเมื่อกลับมาเปิดแอป</div>
+      </section>`;
+    }
+    function bindGps() {
+      const b = $('#gps-now');
+      if (b) b.addEventListener('click', async () => { busy(b, true, 'กำลังส่ง…'); await Track.tick(true); if (Track.state === 'on') toast('ส่งตำแหน่งแล้ว', 'good'); else if (Track.msg) toast(Track.msg, 'bad'); });
+    }
+    Day.onPaint = () => { const c = $('#gps-card'); if (c && d) { c.outerHTML = gpsCard(); bindGps(); } };
+
+    function draw() {
+      if (!$('#d-body')) return;
+      if (!d.daily_check) {
+        $('#d-body').innerHTML = `<div class="banner info">${icon('shield', 18)}<span>บริษัทไม่ได้เปิดใช้การตรวจความพร้อมประจำวัน</span></div>${gpsCard()}`;
+        bindGps();
+        return;
+      }
+      if (d.check) return drawDone();
+      drawForm();
+    }
+
+    function drawDone() {
+      const c = d.check;
+      $('#d-body').innerHTML = `<section class="ready-done">
+          <div class="ready-ico good">${icon('shield', 34)}</div>
+          <b style="font-size:21px">พร้อมปฏิบัติงานแล้ว</b>
+          <span class="muted">ตรวจเมื่อ ${esc(UI.hhmm(c.created_at))} น. · ${esc(UI.fmtDate(c.date))}</span>
+          <div class="pick-card" style="width:100%">${UI.vehicleThumb((d.vehicles.find((v) => v.id === c.vehicle_id) || {}).photo_url, 64, 44)}<div style="text-align:left"><div class="s">รถวันนี้</div><div class="t mono">${esc(c.plate || '-')}</div>${c.vehicle_name ? `<div class="s">${esc(c.vehicle_name)}</div>` : ''}</div></div>
+          <div class="ck-photos done">${c.photos.map((p) => `<button type="button" data-photo="${esc(p.url)}" data-cap="${esc(p.label)}"><img src="${esc(p.url)}" alt="${esc(p.label)}" loading="lazy"><span>${esc(p.label)}</span></button>`).join('')}</div>
+          ${next ? `<a class="btn btn-primary btn-lg btn-block" href="#/driver/job/${esc(next)}">ไปเช็คอินต่อ</a>` : `<a class="btn btn-lg btn-block" href="#/driver">ดูแผนงานวันนี้</a>`}
+        </section>${gpsCard()}`;
+      $$('[data-photo]').forEach((b) => b.addEventListener('click', () => UI.showPhoto(b.dataset.photo, b.dataset.cap)));
+      bindGps();
+    }
+
+    function drawForm() {
+      const labels = d.photo_labels || ['รถภายนอก', 'ป้ายทะเบียน', 'ภายในรถ'];
+      const f = { photos: labels.map(() => null), items: {}, vehicle_id: d.vehicle_id || (d.vehicles.length === 1 ? d.vehicles[0].id : ''), phone: d.driver.phone || '', sending: false };
+      const veh = () => d.vehicles.find((v) => v.id === f.vehicle_id) || null;
+      $('#d-body').innerHTML = `
+        <div class="ready-head"><span class="ready-ico">${icon('shield', 30)}</span>
+          <h2>ตรวจความพร้อมประจำวัน</h2><p>ยืนยันข้อมูลและถ่ายรูปรถวันละครั้ง ก่อนเริ่มงานแรกของวัน</p></div>
+        <section class="card card-pad ready-info">
+          <div class="eyebrow">${esc(d.company || '')}</div>
+          <div class="ri-row"><span>คนขับ</span><b>${esc(d.driver.name)}</b></div>
+          <label class="ri-row"><span>เบอร์โทร</span><input class="input" id="ck-phone" type="tel" inputmode="tel" maxlength="20" value="${esc(f.phone)}" placeholder="ใส่เบอร์โทรของคุณ"></label>
+          <label class="ri-row"><span>รถของคุณ</span>${d.vehicles.length ? `<select class="input" id="ck-veh">
+              <option value="">— เลือกรถที่ใช้วันนี้ —</option>
+              ${d.vehicles.map((v) => `<option value="${esc(v.id)}" ${v.id === f.vehicle_id ? 'selected' : ''}>${esc(v.plate)}${v.name ? ' · ' + esc(v.name) : ''}</option>`).join('')}
+            </select>` : `<b>${esc(d.plate || '-')}</b>`}</label>
+          <div id="ck-vehcard"></div>
+        </section>
+        <section class="card card-pad">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:12px"><b>ถ่ายรูปก่อนเริ่มงาน ${labels.length} รูป (จำเป็น)</b><span class="muted" id="ck-count"></span></div>
+          <div class="ck-photos" id="ck-photos"></div>
+        </section>
+        <section class="card card-pad">
+          <b style="display:block;margin-bottom:10px">ยืนยันรายการ</b>
+          <div class="ck-list">${CHECK_ITEMS.map(([k, t]) => `<label class="ck-item"><input type="checkbox" data-item="${k}"><span class="box" aria-hidden="true">${icon('check', 16, 'stroke-width="3"')}</span><span>${esc(t)}</span></label>`).join('')}</div>
+        </section>
+        <button type="button" class="btn btn-primary btn-block big-check" id="ck-submit" disabled>${icon('check', 22)}<span>ตรวจสอบให้ครบก่อน</span></button>
+        ${gpsCard()}`;
+      bindGps();
+      const vehCard = () => {
+        const v = veh();
+        $('#ck-vehcard').innerHTML = v ? `<div class="pick-card">${UI.vehicleThumb(v.photo_url, 76, 50)}<div><div class="t mono">${esc(v.plate)}</div><div class="s">${esc(v.name || 'รถ')}${v.seats ? ' · ' + v.seats + ' ที่นั่ง' : ''}</div></div></div>` : '';
+      };
+      vehCard();
+      if ($('#ck-veh')) $('#ck-veh').addEventListener('change', (e) => { f.vehicle_id = e.target.value; vehCard(); state(); });
+      $('#ck-phone').addEventListener('input', (e) => { f.phone = e.target.value; });
+      $$('[data-item]').forEach((c) => c.addEventListener('change', () => { f.items[c.dataset.item] = c.checked; state(); }));
+
+      function drawPhotos() {
+        $('#ck-photos').innerHTML = labels.map((l, i) => {
+          const p = f.photos[i];
+          return `<label class="ck-slot ${p ? 'has' : ''} ${p === 'loading' ? 'loading' : ''}" for="ck-cam-${i}">
+            ${p && p !== 'loading' ? `<img src="${p}" alt="${esc(l)}">` : p === 'loading' ? '<span class="spinner sm"></span>' : icon('camera', 26)}
+            <span class="lb">${i + 1} · ${esc(l)}</span>
+            ${p && p !== 'loading' ? `<span class="re">${icon('refresh', 14)}ถ่ายใหม่</span>` : ''}
+            <input type="file" accept="image/*" capture="environment" id="ck-cam-${i}" class="file-hidden" data-slot="${i}">
+          </label>`;
+        }).join('');
+        $('#ck-count').textContent = `${f.photos.filter((p) => p && p !== 'loading').length} / ${labels.length}`;
+        $$('[data-slot]').forEach((inp) => inp.addEventListener('change', async (e) => {
+          const i = Number(inp.dataset.slot);
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          f.photos[i] = 'loading'; drawPhotos(); state();
+          try {
+            const v = veh();
+            const line2 = `${UI.fmtDate(UI.today(), { noDay: true })} ${UI.bkkNow().time} น. · ${d.driver.name}${v ? ' · ' + v.plate : ''}`;
+            f.photos[i] = await processPhoto(file, [`ตรวจความพร้อม · ${labels[i]}`, line2], API.isDemo() ? 520 : 1280);
+          } catch (err) { f.photos[i] = null; toast('อ่านรูปไม่ได้ กรุณาถ่ายใหม่', 'bad'); }
+          drawPhotos(); state();
+        }));
+      }
+      function ready() {
+        return f.photos.every((p) => p && p !== 'loading') && CHECK_ITEMS.every(([k]) => f.items[k]) && (!d.vehicles.length || !!f.vehicle_id);
+      }
+      function state() {
+        const b = $('#ck-submit');
+        if (!b || f.sending) return;
+        const okk = ready();
+        b.disabled = !okk;
+        b.querySelector('span').textContent = okk ? 'ยืนยันความพร้อม' : 'ตรวจสอบให้ครบก่อน';
+      }
+      $('#ck-submit').addEventListener('click', async () => {
+        if (!ready() || f.sending) return;
+        const b = $('#ck-submit');
+        f.sending = true;
+        busy(b, true, 'กำลังส่งรูป…');
+        let pos = null;
+        try { pos = await Track.position(8000); } catch (e) { /* ไม่บังคับ */ }
+        try {
+          const c = await API.call('saveDailyCheck', {
+            photos: f.photos, items: f.items, vehicle_id: f.vehicle_id, plate: d.plate, phone: f.phone.trim(),
+            lat: pos ? pos.lat : null, lng: pos ? pos.lng : null, acc: pos ? pos.acc : null
+          });
+          d.check = c;
+          Day.set(d);
+          toast('ตรวจความพร้อมเรียบร้อย พร้อมปฏิบัติงาน', 'good');
+          if (next) { location.hash = '#/driver/job/' + next; return; }
+          drawDone();
+        } catch (e) {
+          f.sending = false;
+          busy(b, false);
+          if (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'BAD_RESPONSE') {
+            try { const fresh = await Day.get(true); if (fresh.check) { d = fresh; toast('ตรวจความพร้อมเรียบร้อย', 'good'); return draw(); } } catch (e2) { /* ยังออฟไลน์ */ }
+            toast('ส่งไม่สำเร็จเพราะสัญญาณอินเทอร์เน็ต — รูปยังอยู่ กดยืนยันอีกครั้ง', 'bad');
+          } else toast(e.message, 'bad');
+          state();
+        }
+      });
+      drawPhotos(); state();
+    }
+    load();
+  };
+
+  /* ====================== แท็บ: ฉัน ====================== */
+  V.driverMe = async function () {
+    const s = API.session();
+    mount('me', loading());
+    Day.onPaint = null;
+    let d = null;
+    try { d = await Day.get(); } catch (e) { /* แสดงข้อมูลเท่าที่มี */ }
+    if (!$('#d-body')) return;
+    const c = d && d.check;
+    $('#d-body').innerHTML = `
+      <section class="card card-pad me-card">
+        ${UI.avatar(s.user.name, (d && d.driver.photo_url) || s.user.photo_url, 76)}
+        <div style="min-width:0"><b style="font-size:20px">${esc(s.user.name)}</b>
+          <div class="muted">${esc((d && d.driver.phone) || 'ยังไม่มีเบอร์โทร')}</div>
+          <div class="muted small">${esc(s.company || '')}</div></div>
+      </section>
+      <section class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <b>วันนี้ · ${esc(UI.fmtDate(UI.today()))}</b>
+        <div class="kv">
+          <div><span class="k">ตรวจความพร้อม</span><span class="v">${!d ? '-' : !d.daily_check ? 'ไม่ได้เปิดใช้' : c ? 'ตรวจแล้ว ' + esc(UI.hhmm(c.created_at)) + ' น.' : '<span style="color:var(--warn-ink)">ยังไม่ได้ตรวจ</span>'}</span></div>
+          <div><span class="k">รถวันนี้</span><span class="v mono">${esc((c && c.plate) || (d && d.plate) || '-')}</span></div>
+          <div><span class="k">งานวันนี้</span><span class="v">${d ? d.jobs_today + ' งาน' : '-'}</span></div>
+          <div><span class="k">GPS</span><span class="v">${esc({ on: 'กำลังส่ง', off: 'ปิด', denied: 'ไม่ได้รับอนุญาต', wait: 'รอตรวจความพร้อม', locating: 'กำลังหา…', error: 'ส่งไม่สำเร็จ' }[Track.state] || '-')}</span></div>
+        </div>
+        ${d && d.daily_check && !c ? `<a class="btn btn-primary" href="#/driver/check">${icon('shield', 18)}ไปตรวจความพร้อม</a>` : ''}
+      </section>
+      <section class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+        <b>ใช้งานให้สะดวก</b>
+        <ol class="steps-mini"><li>กด "แชร์" (iPhone) หรือเมนู ⋮ (Android) แล้วเลือก "เพิ่มลงหน้าจอหลัก" เพื่อเปิดแอปได้ในแตะเดียว</li>
+          <li>อนุญาตให้ใช้ตำแหน่ง (Location) เมื่อระบบถาม</li>
+          <li>เปิดแอปนี้ค้างไว้ระหว่างทำงาน ระบบจะส่งตำแหน่งให้แอดมินเป็นระยะ</li></ol>
+      </section>
+      <div class="actions" style="flex-direction:column;align-items:stretch">
+        <button type="button" class="btn btn-lg" id="me-refresh">${icon('refresh', 18)}รีเฟรชข้อมูล</button>
+        <button type="button" class="btn btn-lg btn-danger" data-logout>${icon('logout', 18)}ออกจากระบบ</button>
+      </div>
+      <div class="muted small" style="text-align:center">Smart Tracking Jobs${d && d.version ? ' · ระบบหลังบ้าน ' + esc(d.version) : ''}</div>`;
+    $$('#d-body [data-logout]').forEach((b) => b.addEventListener('click', () => App.doLogout()));
+    $('#me-refresh').addEventListener('click', async (e) => { busy(e.currentTarget, true, 'กำลังโหลด…'); try { await Day.get(true); } catch (err) { toast(err.message, 'bad'); } V.driverMe(); });
   };
 
   /* ---------- ตำแหน่งและรูป ---------- */
@@ -2647,6 +3618,7 @@ window.STJ_CONFIG = {
   const App = (window.App = {
     state: {},
     onLeave(fn) { leaveFns.push(fn); },
+    doLogout() { return logout(); },
     demoBar() {
       if (!API.isDemo()) return '';
       return `<div class="demo-bar"><span><b>โหมดตัวอย่าง</b> — ข้อมูลเก็บในเครื่องนี้เท่านั้น</span>
@@ -2788,22 +3760,38 @@ window.STJ_CONFIG = {
       if (st.pin.length === 6) submit();
     }
     async function submit() {
+      if (st.busy || st.pin.length !== 6) return;
       st.busy = true;
-      $('#lg-err').innerHTML = '<span class="spinner sm" style="display:inline-block;vertical-align:middle"></span> กำลังตรวจสอบ…';
-      $('#lg-err').style.color = 'var(--muted)';
+      $('#lg-pad').classList.add('busy');
+      const err = $('#lg-err');
+      err.innerHTML = '<span class="spinner sm" style="display:inline-block;vertical-align:middle"></span> กำลังเข้าสู่ระบบ…';
+      err.style.color = 'var(--muted)';
+      const slow = setTimeout(() => { if (st.busy && $('#lg-err')) $('#lg-err').innerHTML = '<span class="spinner sm" style="display:inline-block;vertical-align:middle"></span> ระบบกำลังเริ่มทำงาน อาจใช้เวลาสักครู่…'; }, 6000);
       try {
         const res = await API.call('login', st.tab === 'admin' ? { role: 'admin', pin: st.pin } : { role: 'driver', driverId: st.driver.id, pin: st.pin });
+        clearTimeout(slow);
         API.setSession(res);
         if (res.role === 'driver') { try { localStorage.setItem('stj_last_driver', res.user.id); } catch (e) { /* ไม่เป็นไร */ } }
         toast(`ยินดีต้อนรับ ${res.user.name}`, 'good');
         location.hash = res.role === 'admin' ? '#/admin' : '#/driver';
       } catch (e) {
-        st.busy = false; st.pin = '';
+        clearTimeout(slow);
+        st.busy = false;
+        if ($('#lg-pad')) $('#lg-pad').classList.remove('busy');
+        const box = $('#lg-err');
+        if (!box) return;
+        box.style.color = 'var(--bad)';
+        if (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'BAD_RESPONSE') {
+          // เน็ตสะดุด: เก็บ PIN ไว้ ให้กดลองอีกครั้งได้ทันที ไม่ต้องกดใหม่ทั้งหมด
+          box.innerHTML = `${esc(e.message)}<br><button type="button" class="btn btn-sm" id="lg-again" style="margin-top:8px">${icon('refresh', 16)}ลองเข้าสู่ระบบอีกครั้ง</button>`;
+          $('#lg-again').addEventListener('click', submit);
+          return;
+        }
+        st.pin = '';
         dots();
         const d = $('#lg-dots');
         if (d) { d.classList.remove('err'); void d.offsetWidth; d.classList.add('err'); }
-        $('#lg-err').style.color = 'var(--bad)';
-        $('#lg-err').textContent = e.message;
+        box.textContent = e.message;
       }
     }
     const onKey = (e) => {
@@ -2827,6 +3815,8 @@ window.STJ_CONFIG = {
     [/^#\/admin\/vehicles$/, 'admin', 'vehicles'],
     [/^#\/admin\/settings$/, 'admin', 'settings'],
     [/^#\/driver$/, 'driver', 'driverHome'],
+    [/^#\/driver\/check$/, 'driver', 'driverCheck'],
+    [/^#\/driver\/me$/, 'driver', 'driverMe'],
     [/^#\/driver\/job\/([\w-]+)$/, 'driver', 'driverJob']
   ];
 

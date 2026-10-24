@@ -13,7 +13,7 @@
  * PIN แอดมินเริ่มต้น: 000000 (เปลี่ยนได้ในหน้า ตั้งค่า ของแอป)
  */
 
-var APP_VERSION = '1.2.0';
+var APP_VERSION = '1.3.0';
 var DEFAULT_ADMIN_PIN = '000000';
 var SESSION_DAYS = { admin: 7, driver: 30 };
 var MAX_FAILS = 5;
@@ -21,6 +21,11 @@ var LOCK_MINUTES = 15;
 var TZ_OFFSET_HOURS = 7; // เวลาประเทศไทย
 var DEFAULT_RADIUS_M = 100; // รัศมีเช็คอินเริ่มต้น (เมตร) แก้ได้ในหน้า ตั้งค่า ของแอป
 var MAX_PHOTOS = 5;          // รูปเช็คอินสูงสุดต่อจุด
+var DAILY_PHOTOS = ['รถภายนอก', 'ป้ายทะเบียน', 'ภายในรถ']; // รูปตรวจความพร้อมประจำวัน (บังคับครบ)
+var DAILY_ITEMS = ['name', 'phone', 'vehicle', 'gps'];      // รายการที่คนขับต้องติ๊กยืนยัน
+var DEFAULT_GPS_MIN = 3;     // ส่งตำแหน่งทุกกี่นาที (ขณะเปิดแอป)
+var LOCATION_KEEP_ROWS = 12000; // เก็บประวัติตำแหน่งย้อนหลังประมาณนี้ (เกินแล้วลบของเก่า)
+var SETUP_KEY = 'setup_ok_v4';
 
 var SCHEMA = {
   Settings: ['key', 'value'],
@@ -34,7 +39,10 @@ var SCHEMA = {
           'photo_urls', 'checkin_dist_m', 'checkin_acc_m'],
   Places: ['id', 'name', 'address', 'lat', 'lng', 'map_url', 'used_count', 'last_used'],
   Sessions: ['token', 'role', 'user_id', 'name', 'created_at', 'expires_at'],
-  Log: ['time', 'who', 'action', 'detail']
+  Log: ['time', 'who', 'action', 'detail'],
+  DailyChecks: ['id', 'date', 'driver_id', 'driver_name', 'vehicle_id', 'plate', 'photo_urls', 'items', 'phone',
+                'lat', 'lng', 'acc_m', 'created_at'],
+  Locations: ['at', 'driver_id', 'name', 'lat', 'lng', 'acc_m', 'source', 'job_id']
 };
 
 var REQ = {}; // แคชภายในคำขอเดียว
@@ -73,7 +81,7 @@ function doPost(e) {
 /** เรียกใช้ครั้งแรกจากหน้า Apps Script เพื่อสร้างแผ่นงานและอนุญาตสิทธิ์ */
 function setup() {
   REQ = {};
-  CacheService.getScriptCache().remove('setup_ok_v3');
+  CacheService.getScriptCache().remove(SETUP_KEY);
   ensureSetup_();
   DriveApp.getRootFolder();            // ขอสิทธิ์ Google Drive (เก็บรูปเช็คอิน)
   Maps.newGeocoder();                  // ขอสิทธิ์ค้นหาสถานที่
@@ -92,7 +100,10 @@ function resetAdminPin() {
 
 var ACTIONS = {
   ping: function () {
-    return { app: 'Smart Tracking Jobs', version: APP_VERSION, company: getSetting_('company_name') || '', checkin_radius_m: radius_() };
+    var out = settingsOut_();
+    out.app = 'Smart Tracking Jobs';
+    out.version = APP_VERSION;
+    return out;
   },
   publicDrivers: function () {
     return rows_('Drivers').filter(function (d) { return d.active === 'true'; })
@@ -116,7 +127,14 @@ var ACTIONS = {
   checkIn: checkIn_,
   searchPlace: searchPlace_,
   resolveLink: resolveLink_,
-  listPlaces: listPlaces_
+  suggestPlace: suggestPlace_,
+  placeDetails: placeDetails_,
+  listPlaces: listPlaces_,
+  myDay: myDay_,
+  saveDailyCheck: saveDailyCheck_,
+  reportLocation: reportLocation_,
+  dayStatus: dayStatus_,
+  clientLog: clientLog_
 };
 
 /* ====================== เข้าสู่ระบบ ====================== */
@@ -124,7 +142,6 @@ var ACTIONS = {
 function login_(req) {
   var pin = String(req.pin || '');
   if (!/^\d{6}$/.test(pin)) fail_('PIN ต้องเป็นตัวเลข 6 หลัก');
-  cleanupSessions_();
   var company = getSetting_('company_name') || '';
 
   if (req.role === 'admin') {
@@ -132,8 +149,7 @@ function login_(req) {
     if (hash_('admin:' + pin) !== getSetting_('admin_pin_hash')) badPin_('admin');
     clearFail_('admin');
     var admin = { id: 'admin', name: 'แอดมิน' };
-    var token = createSession_('admin', admin);
-    log_('admin', 'login', '');
+    var token = withLock_(function () { cleanupSessions_(); var tk = createSession_('admin', admin); log_('admin', 'login', ''); return tk; });
     return { token: token, role: 'admin', user: admin, company: company,
              pinDefault: getSetting_('admin_pin_default') === 'true' };
   }
@@ -147,8 +163,7 @@ function login_(req) {
     if (hash_('driver:' + d.id + ':' + pin) !== d.pin_hash) badPin_('d:' + d.id);
     clearFail_('d:' + d.id);
     var user = { id: d.id, name: d.name, photo_url: d.photo_url || '' };
-    var t = createSession_('driver', user);
-    log_(d.name, 'login', '');
+    var t = withLock_(function () { cleanupSessions_(); var tk = createSession_('driver', user); log_(d.name, 'login', ''); return tk; });
     return { token: t, role: 'driver', user: user, company: company };
   }
   fail_('ประเภทผู้ใช้ไม่ถูกต้อง');
@@ -156,7 +171,7 @@ function login_(req) {
 
 function logout_(req) {
   var t = String(req.token || '');
-  if (t) killSessions_(function (s) { return s.token === t; });
+  if (t) withLock_(function () { killSessions_(function (s) { return s.token === t; }); });
   return true;
 }
 
@@ -177,8 +192,10 @@ function changeAdminPin_(req) {
   if (newPin === DEFAULT_ADMIN_PIN) fail_('ห้ามใช้ 000000 เป็น PIN ใหม่');
   setSetting_('admin_pin_hash', hash_('admin:' + newPin));
   setSetting_('admin_pin_default', 'false');
-  killSessions_(function (x) { return x.role === 'admin' && x.token !== s.token; });
-  log_('admin', 'change_pin', '');
+  withLock_(function () {
+    killSessions_(function (x) { return x.role === 'admin' && x.token !== s.token; });
+    log_('admin', 'change_pin', '');
+  });
   return true;
 }
 
@@ -194,8 +211,34 @@ function saveSettings_(req) {
     if (!isFinite(r) || r < 0 || r > 5000 || Math.round(r) !== r) fail_('รัศมีเช็คอินต้องเป็นตัวเลข 0–5000 เมตร');
     setSetting_('checkin_radius_m', String(r));
   }
-  return { company: getSetting_('company_name'), checkin_radius_m: radius_() };
+  if (req.daily_check !== undefined) setSetting_('daily_check', req.daily_check ? 'on' : 'off');
+  if (req.gps_tracking !== undefined) setSetting_('gps_tracking', req.gps_tracking ? 'on' : 'off');
+  if (req.gps_interval_min !== undefined) {
+    var g = Number(req.gps_interval_min);
+    if (!isFinite(g) || g < 1 || g > 30 || Math.round(g) !== g) fail_('ความถี่ส่งตำแหน่งต้องเป็น 1–30 นาที');
+    setSetting_('gps_interval_min', String(g));
+  }
+  if (req.places_api_key !== undefined) {
+    var key = clean_(req.places_api_key, 200);
+    if (key) placesAutocomplete_('สยามพารากอน', key, ''); // ทดสอบก่อนบันทึก (ถ้าใช้ไม่ได้จะแจ้งเหตุผล)
+    setSetting_('places_api_key', key);
+  }
+  return settingsOut_();
 }
+
+function settingsOut_() {
+  return {
+    company: getSetting_('company_name') || '',
+    checkin_radius_m: radius_(),
+    daily_check: dailyCheckOn_(),
+    gps_tracking: gpsOn_(),
+    gps_interval_min: gpsMin_(),
+    places_api: !!getSetting_('places_api_key')
+  };
+}
+function dailyCheckOn_() { return getSetting_('daily_check') !== 'off'; }
+function gpsOn_() { return getSetting_('gps_tracking') !== 'off'; }
+function gpsMin_() { var g = Number(getSetting_('gps_interval_min')); return g >= 1 && g <= 30 ? g : DEFAULT_GPS_MIN; }
 
 /* ====================== คนขับ ====================== */
 
@@ -475,6 +518,9 @@ function checkIn_(req) {
     return { ext: m[1], b64: m[2] };
   });
   var lat = num_(req.lat), lng = num_(req.lng), acc = num_(req.acc);
+  if (dailyCheckOn_() && !findDailyCheck_(s.user_id, today_())) {
+    fail_('กรุณาตรวจความพร้อมประจำวันก่อนเช็คอิน (เมนู "ตรวจความพร้อม" ด้านล่าง)', 'NEED_DAILY');
+  }
 
   return withLock_(function () {
     var stop = rows_('Stops').filter(function (x) { return x.id === String(req.stopId || ''); })[0];
@@ -513,6 +559,7 @@ function checkIn_(req) {
     if (!job.started_at) patch.started_at = t;
     if (patch.status === 'done') patch.finished_at = t;
     update_('Jobs', job, patch);
+    if (lat !== null && lng !== null) addLocation_(s, lat, lng, acc, 'checkin', job.id);
     log_(s.name, 'check_in', job.job_no + ' จุด ' + stop.seq + ' ' + stop.name + ' · ' + saved.length + ' รูป' + (dist === null ? '' : ' · ห่าง ' + dist + ' ม.'));
     return getJobById_(job.id);
   });
@@ -561,44 +608,127 @@ function searchPlace_(req) {
   if (q.length < 2) fail_('พิมพ์คำค้นหาอย่างน้อย 2 ตัวอักษร');
   var co = parseLatLng_(q);
   if (co) return [{ name: 'พิกัด ' + q, address: '', lat: co.lat, lng: co.lng, map_url: mapsUrl_(co.lat, co.lng) }];
-  var r = Maps.newGeocoder().setRegion('th').setLanguage('th').geocode(q);
-  if (!r || r.status === 'ZERO_RESULTS') return [];
-  if (r.status !== 'OK') fail_('ค้นหาไม่สำเร็จ (' + r.status + ') ลองวางลิงก์ Google Maps แทน');
-  return (r.results || []).slice(0, 6).map(function (x) {
-    var loc = x.geometry.location;
-    return {
-      name: guessName_(x, q), address: x.formatted_address || '',
-      lat: loc.lat, lng: loc.lng, map_url: mapsUrl_(loc.lat, loc.lng, x.place_id)
-    };
-  });
+  return geocodeList_(q, 6);
 }
 
 function resolveLink_(req) {
   auth_(req, 'admin');
   var url = String(req.url || '').trim();
   var co = parseLatLng_(url);
-  if (co) return { name: '', lat: co.lat, lng: co.lng, map_url: mapsUrl_(co.lat, co.lng) };
+  if (co) return { name: '', address: '', lat: co.lat, lng: co.lng, map_url: mapsUrl_(co.lat, co.lng) };
   var mUrl = url.match(/https:\/\/[^\s]+/i); // รองรับข้อความที่แชร์มาพร้อมลิงก์
   if (!mUrl) fail_('กรุณาวางลิงก์จาก Google Maps (ขึ้นต้นด้วย https://)');
   url = mUrl[0];
-  var cur = url;
+  var found = followMapsLink_(url);
+  if (found.lat !== null) return { name: found.name, address: '', lat: found.lat, lng: found.lng, map_url: url };
+  // ลิงก์แชร์จาก iPhone บางแบบไม่มีพิกัด มีแค่ชื่อ/ที่อยู่ → ค้นพิกัดจากชื่อด้วย Google แทน
+  var q = found.name || clean_(req.hint, 150);
+  var g = q ? geocodeList_(q, 1)[0] : null;
+  if (g) return { name: found.name || g.name, address: g.address, lat: g.lat, lng: g.lng, map_url: url, approx: true };
+  return { name: found.name || '', address: '', lat: null, lng: null, map_url: url };
+}
+
+function followMapsLink_(url) {
+  var cur = url, name = '';
   for (var i = 0; i < 6; i++) {
     if (!isGoogleHost_(cur)) fail_('รองรับเฉพาะลิงก์จาก Google Maps');
     var info = parseMapsUrl_(cur);
-    if (info.lat !== null) return { name: info.name, lat: info.lat, lng: info.lng, map_url: url };
+    if (info.name) name = info.name;
+    if (info.lat !== null) return { name: name, lat: info.lat, lng: info.lng };
     var res = UrlFetchApp.fetch(cur, { followRedirects: false, muteHttpExceptions: true });
     var h = res.getHeaders() || {};
     var loc = h.Location || h.location;
     if (!loc) {
       var body = parseMapsUrl_(String(res.getContentText() || '').slice(0, 300000));
-      if (body.lat !== null) return { name: info.name || body.name, lat: body.lat, lng: body.lng, map_url: url };
-      break;
+      return { name: name || body.name, lat: body.lat, lng: body.lng };
     }
     if (Array.isArray(loc)) loc = loc[0];
     cur = /^https?:\/\//i.test(loc) ? loc : cur.replace(/^(https?:\/\/[^\/]+).*$/i, '$1') + loc;
   }
   var last = parseMapsUrl_(cur);
-  return { name: last.name || '', lat: last.lat, lng: last.lng, map_url: url };
+  return { name: last.name || name, lat: last.lat, lng: last.lng };
+}
+
+/* ค้นหาด้วย Geocoder ของ Apps Script (ฟรี) + จำผลไว้ 6 ชม. เพื่อประหยัดโควตา */
+function geocodeList_(q, max) {
+  var cache = CacheService.getScriptCache();
+  var key = 'geo:' + hex_(q);
+  var hit = cache.get(key);
+  var list;
+  if (hit) {
+    list = JSON.parse(hit);
+  } else {
+    var r = Maps.newGeocoder().setRegion('th').setLanguage('th').geocode(q);
+    if (!r || r.status === 'ZERO_RESULTS') list = [];
+    else if (r.status !== 'OK') fail_('ค้นหาไม่สำเร็จ (' + r.status + ') ลองวางลิงก์ Google Maps แทน');
+    else {
+      list = (r.results || []).slice(0, 6).map(function (x) {
+        var loc = x.geometry.location;
+        return { name: guessName_(x, q), address: x.formatted_address || '', lat: loc.lat, lng: loc.lng,
+                 place_id: x.place_id || '', map_url: mapsUrl_(loc.lat, loc.lng, x.place_id) };
+      });
+    }
+    try { cache.put(key, JSON.stringify(list), 21600); } catch (e) {}
+  }
+  return list.slice(0, max || 6);
+}
+
+/* คำแนะนำสถานที่ระหว่างพิมพ์: ใช้ Google Places ถ้าแอดมินใส่ API key ไว้ ไม่งั้นใช้ Geocoder ฟรี */
+function suggestPlace_(req) {
+  auth_(req, 'admin');
+  var q = clean_(req.q, 150);
+  if (q.length < 2) return { source: 'none', items: [] };
+  var co = parseLatLng_(q);
+  if (co) return { source: 'coords', items: [{ name: 'พิกัด ' + q, address: '', lat: co.lat, lng: co.lng, map_url: mapsUrl_(co.lat, co.lng) }] };
+  var key = getSetting_('places_api_key');
+  if (key) {
+    try { return { source: 'places', items: placesAutocomplete_(q, key, clean_(req.session, 80)) }; }
+    catch (e) { /* ใช้ Geocoder แทน */ }
+  }
+  try { return { source: 'geocoder', items: geocodeList_(q, 5) }; }
+  catch (e2) { return { source: 'geocoder', items: [], error: e2.message }; }
+}
+
+function placesAutocomplete_(q, key, session) {
+  var body = { input: q, languageCode: 'th', regionCode: 'th', includedRegionCodes: ['th'] };
+  if (session) body.sessionToken = session;
+  var res = UrlFetchApp.fetch('https://places.googleapis.com/v1/places:autocomplete', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { 'X-Goog-Api-Key': key }, payload: JSON.stringify(body)
+  });
+  var j = {};
+  try { j = JSON.parse(res.getContentText() || '{}'); } catch (e) {}
+  if (res.getResponseCode() !== 200) {
+    fail_('Google Places ใช้งานไม่ได้: ' + ((j.error && j.error.message) || ('HTTP ' + res.getResponseCode())).slice(0, 200));
+  }
+  return (j.suggestions || []).filter(function (x) { return x.placePrediction; }).slice(0, 6).map(function (x) {
+    var p = x.placePrediction, sf = p.structuredFormat || {};
+    return {
+      place_id: p.placeId, needs_details: true, lat: null, lng: null,
+      name: (sf.mainText && sf.mainText.text) || (p.text && p.text.text) || '',
+      address: (sf.secondaryText && sf.secondaryText.text) || ''
+    };
+  });
+}
+
+function placeDetails_(req) {
+  auth_(req, 'admin');
+  var id = String(req.place_id || '').replace(/[^A-Za-z0-9_\-]/g, '');
+  if (!id) fail_('ไม่พบรหัสสถานที่');
+  var key = getSetting_('places_api_key');
+  if (!key) fail_('ยังไม่ได้ตั้งค่า Google Places API key');
+  var session = clean_(req.session, 80);
+  var res = UrlFetchApp.fetch('https://places.googleapis.com/v1/places/' + id + '?languageCode=th' +
+    (session ? '&sessionToken=' + encodeURIComponent(session) : ''), {
+    method: 'get', muteHttpExceptions: true,
+    headers: { 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': 'id,displayName,formattedAddress,location' }
+  });
+  var j = {};
+  try { j = JSON.parse(res.getContentText() || '{}'); } catch (e) {}
+  if (res.getResponseCode() !== 200 || !j.location) fail_('อ่านข้อมูลสถานที่ไม่ได้: ' + ((j.error && j.error.message) || ('HTTP ' + res.getResponseCode())).slice(0, 200));
+  var lat = j.location.latitude, lng = j.location.longitude;
+  return { name: (j.displayName && j.displayName.text) || '', address: j.formattedAddress || '', lat: lat, lng: lng,
+           place_id: id, map_url: mapsUrl_(lat, lng, id) };
 }
 
 function listPlaces_(req) {
@@ -708,6 +838,160 @@ function upsertPlaces_(stops) {
       places.push(rec);
     }
   });
+}
+
+/* ====================== ตรวจความพร้อมประจำวัน ====================== */
+
+function myDay_(req) {
+  var s = auth_(req, 'driver');
+  var today = today_();
+  var drv = rows_('Drivers').filter(function (d) { return d.id === s.user_id; })[0] || {};
+  var vehicles = rows_('Vehicles').filter(function (v) { return v.active === 'true'; });
+  var mine = rows_('Jobs').filter(function (j) {
+    return j.driver_id === s.user_id && j.date === today && j.status !== 'cancelled';
+  }).sort(function (a, b) { return (a.time || '99:99') < (b.time || '99:99') ? -1 : 1; });
+  var first = mine.filter(function (j) { return j.status !== 'done'; })[0] || mine[0] || null;
+  var check = findDailyCheck_(s.user_id, today);
+  var out = settingsOut_();
+  out.date = today;
+  out.driver = { id: s.user_id, name: drv.name || s.name, phone: drv.phone || '', photo_url: drv.photo_url || '' };
+  out.check = check ? checkOut_(check, indexBy_(vehicles, 'id')) : null;
+  out.vehicle_id = first ? first.vehicle_id : '';
+  out.plate = first ? first.plate : '';
+  out.jobs_today = mine.length;
+  out.vehicles = vehicles.map(function (v) { return { id: v.id, plate: v.plate, name: v.name, seats: num_(v.seats), photo_url: v.photo_url }; })
+    .sort(function (a, b) { return a.plate.localeCompare(b.plate, 'th'); });
+  out.photo_labels = DAILY_PHOTOS;
+  out.version = APP_VERSION;
+  return out;
+}
+
+function saveDailyCheck_(req) {
+  var s = auth_(req, 'driver');
+  var list = Array.isArray(req.photos) ? req.photos : [];
+  if (list.length !== DAILY_PHOTOS.length || list.some(function (p) { return !p; })) {
+    fail_('กรุณาถ่ายรูปให้ครบ ' + DAILY_PHOTOS.length + ' รูป (' + DAILY_PHOTOS.join(', ') + ')');
+  }
+  var photos = list.map(function (p) {
+    var m = String(p || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
+    if (!m) fail_('รูปไม่ถูกต้อง กรุณาถ่ายใหม่');
+    if (m[2].length > 10000000) fail_('รูปมีขนาดใหญ่เกินไป');
+    return { ext: m[1], b64: m[2] };
+  });
+  var items = req.items || {};
+  DAILY_ITEMS.forEach(function (k) { if (items[k] !== true) fail_('กรุณาติ๊กยืนยันให้ครบทุกข้อ'); });
+  var vehicleId = String(req.vehicle_id || '');
+  var phone = clean_(req.phone, 20);
+  var lat = num_(req.lat), lng = num_(req.lng), acc = num_(req.acc);
+  var today = today_();
+
+  return withLock_(function () {
+    if (findDailyCheck_(s.user_id, today)) fail_('วันนี้ตรวจความพร้อมไปแล้ว');
+    var vehicles = rows_('Vehicles');
+    var veh = vehicleId ? vehicles.filter(function (v) { return v.id === vehicleId; })[0] : null;
+    if (vehicleId && !veh) fail_('ไม่พบรถที่เลือก');
+    if (!veh && vehicles.some(function (v) { return v.active === 'true'; })) fail_('กรุณาเลือกรถที่ใช้วันนี้');
+    var plate = veh ? veh.plate : clean_(req.plate, 20);
+    var drv = rows_('Drivers').filter(function (d) { return d.id === s.user_id; })[0];
+    if (drv && phone && phone !== drv.phone) update_('Drivers', drv, { phone: phone, updated_at: now_() });
+    var saved = photos.map(function (p, i) {
+      var f = savePhoto_(p.ext, p.b64, 'ตรวจรถ_' + today + '_' + s.name + '_' + DAILY_PHOTOS[i], 'w1200');
+      return { label: DAILY_PHOTOS[i], id: f.id, url: f.url };
+    });
+    var rec = {
+      id: 'C' + shortId_(), date: today, driver_id: s.user_id, driver_name: s.name,
+      vehicle_id: veh ? veh.id : '', plate: plate, photo_urls: JSON.stringify(saved),
+      items: DAILY_ITEMS.join(','), phone: phone || (drv ? drv.phone : ''),
+      lat: lat === null ? '' : lat, lng: lng === null ? '' : lng, acc_m: acc === null ? '' : Math.round(acc),
+      created_at: now_()
+    };
+    insert_('DailyChecks', rec);
+    if (lat !== null && lng !== null) addLocation_(s, lat, lng, acc, 'daily_check', '');
+    log_(s.name, 'daily_check', (plate || '-') + ' · ' + saved.length + ' รูป');
+    return checkOut_(rec, indexBy_(vehicles, 'id'));
+  });
+}
+
+function findDailyCheck_(driverId, date) {
+  return rows_('DailyChecks').filter(function (c) { return c.driver_id === driverId && c.date === date; })[0] || null;
+}
+
+function checkOut_(c, vehicles) {
+  var photos = [];
+  try { photos = c.photo_urls ? JSON.parse(c.photo_urls) : []; } catch (e) { photos = []; }
+  var v = vehicles && c.vehicle_id ? vehicles[c.vehicle_id] : null;
+  return {
+    id: c.id, date: c.date, driver_id: c.driver_id, driver_name: c.driver_name,
+    vehicle_id: c.vehicle_id, plate: c.plate, vehicle_name: v ? v.name : '',
+    photos: photos.map(function (p) { return { label: p.label, url: p.url }; }),
+    phone: c.phone, lat: num_(c.lat), lng: num_(c.lng), acc_m: num_(c.acc_m), created_at: c.created_at
+  };
+}
+
+/* ====================== ตำแหน่งคนขับ (ส่งเฉพาะตอนเปิดแอป) ====================== */
+
+function reportLocation_(req) {
+  var s = auth_(req, 'driver');
+  var lat = num_(req.lat), lng = num_(req.lng), acc = num_(req.acc);
+  if (lat === null || lng === null || Math.abs(lat) > 90 || Math.abs(lng) > 180) fail_('ตำแหน่งไม่ถูกต้อง');
+  if (!gpsOn_()) return { saved: false, reason: 'off' };
+  var cache = CacheService.getScriptCache();
+  var k = 'locat:' + s.user_id;
+  if (cache.get(k) && !req.force) return { saved: false, reason: 'too_soon', interval_min: gpsMin_() };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) return { saved: false, reason: 'busy' };
+  try {
+    addLocation_(s, lat, lng, acc, req.source === 'manual' ? 'manual' : 'gps', clean_(req.job_id, 30));
+  } finally { lock.releaseLock(); }
+  cache.put(k, '1', 40);
+  return { saved: true, at: now_(), interval_min: gpsMin_() };
+}
+
+function addLocation_(s, lat, lng, acc, source, jobId) {
+  insert_('Locations', {
+    at: now_(), driver_id: s.user_id, name: s.name, lat: Math.round(lat * 1e6) / 1e6, lng: Math.round(lng * 1e6) / 1e6,
+    acc_m: acc === null || acc === undefined ? '' : Math.round(acc), source: source, job_id: jobId || ''
+  });
+  var sh = sheet_('Locations');
+  if (sh.getLastRow() > LOCATION_KEEP_ROWS + 2000) sh.deleteRows(2, 2000);
+}
+
+/* ภาพรวมประจำวันสำหรับแอดมิน: ใครตรวจความพร้อมแล้ว + ตำแหน่งล่าสุดของรถแต่ละคัน */
+function dayStatus_(req) {
+  auth_(req, 'admin');
+  var date = isDate_(req.date) ? String(req.date) : today_();
+  var vehicles = indexBy_(rows_('Vehicles'), 'id');
+  var checks = rows_('DailyChecks').filter(function (c) { return c.date === date; })
+    .map(function (c) { return checkOut_(c, vehicles); });
+  var locs = date === today_() ? rowsTail_('Locations', 4000) : rows_('Locations');
+  locs = locs.filter(function (l) { return String(l.at).slice(0, 10) === date; });
+  var latest = {}, trail = [];
+  locs.forEach(function (l) {
+    var p = { driver_id: l.driver_id, name: l.name, lat: num_(l.lat), lng: num_(l.lng), acc_m: num_(l.acc_m), at: l.at, source: l.source };
+    if (!latest[l.driver_id] || latest[l.driver_id].at <= l.at) latest[l.driver_id] = p;
+    if (req.trail && l.driver_id === String(req.trail)) trail.push([p.lat, p.lng, l.at]);
+  });
+  var drivers = rows_('Drivers').filter(function (d) { return d.active === 'true'; }).map(function (d) {
+    return { id: d.id, name: d.name, phone: d.phone, photo_url: d.photo_url };
+  });
+  return {
+    date: date, daily_check: dailyCheckOn_(), gps_tracking: gpsOn_(), gps_interval_min: gpsMin_(),
+    checks: checks, drivers: drivers,
+    locations: Object.keys(latest).map(function (k) { return latest[k]; }),
+    trail: trail.slice(-600)
+  };
+}
+
+/* บันทึกปัญหาที่เกิดบนมือถือ (เช่น เชื่อมต่อหลุด) เพื่อดูสาเหตุภายหลังในแผ่นงาน Log */
+function clientLog_(req) {
+  var cache = CacheService.getScriptCache();
+  var n = Number(cache.get('clientlog') || 0);
+  if (n >= 40) return false;
+  cache.put('clientlog', String(n + 1), 600);
+  var who = 'ไม่ทราบ';
+  try { if (req.token) who = auth_(req).name; } catch (e) {}
+  log_(who, 'client_error', (clean_(req.msg, 300) + ' · ' + clean_(req.where, 60) + ' · ' + clean_(req.ua, 160)).slice(0, 600));
+  return true;
 }
 
 /* ====================== ข้อมูล Job ====================== */
@@ -834,7 +1118,7 @@ function clearFail_(key) { CacheService.getScriptCache().remove('fail:' + key); 
 
 function ensureSetup_() {
   var cache = CacheService.getScriptCache();
-  if (cache.get('setup_ok_v3')) return;
+  if (cache.get(SETUP_KEY)) return;
   var ss = ss_();
   Object.keys(SCHEMA).forEach(function (name) {
     var cols = SCHEMA[name];
@@ -854,7 +1138,7 @@ function ensureSetup_() {
     if (!getSetting_('company_name')) setSetting_('company_name', 'บริษัทของฉัน');
   }
   if (getSetting_('checkin_radius_m') === '') setSetting_('checkin_radius_m', String(DEFAULT_RADIUS_M));
-  cache.put('setup_ok_v3', '1', 21600);
+  cache.put(SETUP_KEY, '1', 21600);
 }
 
 function getSetting_(key) {
@@ -899,6 +1183,17 @@ function rows_(name) {
   if (last < 2) return [];
   return sh.getRange(2, 1, last - 1, cols.length).getValues().map(function (r, i) {
     var o = { _row: i + 2 };
+    cols.forEach(function (c, j) { o[c] = r[j] === null || r[j] === undefined ? '' : String(r[j]); });
+    return o;
+  }).filter(function (o) { return o[cols[0]] !== ''; });
+}
+
+function rowsTail_(name, n) {
+  var sh = sheet_(name), cols = SCHEMA[name], last = sh.getLastRow();
+  if (last < 2) return [];
+  var start = Math.max(2, last - n + 1);
+  return sh.getRange(start, 1, last - start + 1, cols.length).getValues().map(function (r, i) {
+    var o = { _row: start + i };
     cols.forEach(function (c, j) { o[c] = r[j] === null || r[j] === undefined ? '' : String(r[j]); });
     return o;
   }).filter(function (o) { return o[cols[0]] !== ''; });
@@ -951,6 +1246,11 @@ function hash_(s) {
     var v = (b < 0 ? b + 256 : b).toString(16);
     return v.length === 1 ? '0' + v : v;
   }).join('');
+}
+
+function hex_(s) {
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(s), Utilities.Charset.UTF_8);
+  return bytes.map(function (b) { var v = (b < 0 ? b + 256 : b).toString(16); return v.length === 1 ? '0' + v : v; }).join('').slice(0, 40);
 }
 
 function bkk_() {
