@@ -382,6 +382,27 @@ img.img-broken { object-fit: contain !important; background: #EEF1F4; }
 .tl-photos img { width: 112px; height: 84px; object-fit: cover; background: #E8EDF1; }
 .tl-photos img.first { width: 148px; height: 111px; }
 
+/* ---------- รูปคนขับและรถ ---------- */
+.avatar-img { border-radius: 50%; object-fit: cover; flex: none; background: #E8EDF1; display: block; }
+.avatar.soft { background: var(--brand-soft); color: var(--brand-dark); }
+.veh-img { border-radius: 10px; object-fit: cover; flex: none; background: #EEF1F4; display: flex; align-items: center; justify-content: center; color: #8A96A3; }
+.veh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; padding: 16px; }
+.veh-card { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; display: flex; flex-direction: column; }
+.veh-card.off { opacity: .6; }
+.veh-card .pic { aspect-ratio: 16 / 10; background: #EEF1F4; display: flex; align-items: center; justify-content: center; color: #8A96A3; }
+.veh-card .pic img { width: 100%; height: 100%; object-fit: cover; }
+.veh-card .info { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; }
+.veh-card .plate { font-size: 18px; font-weight: 700; }
+.veh-card .tools { display: flex; gap: 6px; padding: 0 14px 14px; flex-wrap: wrap; }
+.photo-field { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.photo-field .prev { width: 88px; height: 88px; border-radius: 12px; overflow: hidden; background: #EEF1F4; display: flex; align-items: center; justify-content: center; color: #8A96A3; flex: none; }
+.photo-field .prev.round { border-radius: 50%; }
+.photo-field .prev img { width: 100%; height: 100%; object-fit: cover; }
+.pick-card { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: #F4F6F9; min-height: 64px; }
+.pick-card .t { font-weight: 600; }
+.pick-card .s { font-size: 13px; color: var(--muted); }
+.name-btn .avatar-img { width: 32px; height: 32px; }
+
 </style>
 </head>
 <body>
@@ -729,11 +750,57 @@ window.STJ_CONFIG = {
     return map;
   }
 
+  /* ---------- รูปภาพ ---------- */
+  async function loadImage(file) {
+    if (window.createImageBitmap) {
+      try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { /* ใช้วิธีสำรอง */ }
+    }
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+      img.src = url;
+    });
+  }
+  /* ย่อรูปให้ด้านยาวไม่เกิน maxSide (crop=true ตัดเป็นสี่เหลี่ยมจัตุรัสสำหรับรูปหน้า) */
+  async function resizeImage(file, maxSide, crop) {
+    const img = await loadImage(file);
+    let sx = 0, sy = 0, sw = img.width, sh = img.height;
+    if (crop) { const m = Math.min(sw, sh); sx = (sw - m) / 2; sy = (sh - m) / 2; sw = sh = m; }
+    const k = Math.min(1, maxSide / Math.max(sw, sh));
+    const c = document.createElement('canvas');
+    c.width = Math.round(sw * k); c.height = Math.round(sh * k);
+    c.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    if (img.close) img.close();
+    return c.toDataURL('image/jpeg', 0.8);
+  }
+  function pickImage() {
+    return new Promise((resolve) => {
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'image/*'; inp.className = 'file-hidden';
+      inp.addEventListener('change', () => { resolve(inp.files && inp.files[0] ? inp.files[0] : null); inp.remove(); });
+      document.body.appendChild(inp);
+      inp.click();
+    });
+  }
+  function avatar(name, url, size, extra) {
+    const s = size || 36;
+    const st = `width:${s}px;height:${s}px;font-size:${Math.round(s * 0.42)}px;${extra || ''}`;
+    return url ? `<img class="avatar-img" src="${esc(url)}" alt="" style="${st}">`
+      : `<span class="avatar soft" style="${st}" aria-hidden="true">${esc(String(name || '?').trim().slice(0, 1))}</span>`;
+  }
+  function vehicleThumb(url, w, h) {
+    return url ? `<img class="veh-img" src="${esc(url)}" alt="" style="width:${w}px;height:${h}px">`
+      : `<span class="veh-img empty" style="width:${w}px;height:${h}px">${icon('van', Math.round(h * 0.5))}</span>`;
+  }
+
   window.UI = {
     CONFIG, $, $$, esc, today, addDays, bkkNow, fmtDate, fmtMin, relDay, hhmm, fmtStamp, minutesDiff,
     STATUS, chip, jobTitle, nextStop, pct, progressBar, lastCheckin,
     icon, brandMark, toast, busy, modal, confirmBox, showPhoto, copyText,
-    hasXY, navUrl, placeUrl, routeUrl, distanceM, fmtDist, parseMapsUrl, renderMap
+    hasXY, navUrl, placeUrl, routeUrl, distanceM, fmtDist, parseMapsUrl, renderMap,
+    loadImage, resizeImage, pickImage, avatar, vehicleThumb
   };
 })();
 
@@ -776,13 +843,29 @@ window.STJ_CONFIG = {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
 
+  function vanPhoto(body, plate) {
+    const dark = body === '#1F2937';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+      <rect width="640" height="420" fill="#DCE6EF"/><rect y="300" width="640" height="120" fill="#9AA7B3"/>
+      <path d="M80 300V170q0-40 40-40h300q40 0 70 40l60 70q20 22 20 50v10z" fill="${body}" stroke="#4B5563" stroke-width="3"/>
+      <path d="M130 160h110v70H130zM260 160h110v70H260zM390 160h40q20 0 35 20l35 50H390z" fill="${dark ? '#94A3B8' : '#6B8299'}"/>
+      <circle cx="170" cy="305" r="38" fill="#111827"/><circle cx="170" cy="305" r="16" fill="#9CA3AF"/>
+      <circle cx="480" cy="305" r="38" fill="#111827"/><circle cx="480" cy="305" r="16" fill="#9CA3AF"/>
+      <rect x="250" y="268" width="140" height="36" rx="5" fill="#fff" stroke="#111" stroke-width="2"/>
+      <text x="320" y="294" font-family="sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#111">${plate}</text></svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
   function seed() {
     const t = UI.today();
     const tm = UI.addDays(t, 1);
     const db = { settings: { company_name: 'บริษัท ตัวอย่างทัวร์ จำกัด', admin_pin: '000000', admin_pin_default: 'true', checkin_radius_m: '100' },
-      drivers: [], jobs: [], stops: [], places: [], sessions: [] };
+      drivers: [], vehicles: [], jobs: [], stops: [], places: [], sessions: [] };
     const drv = [['D1', 'สมชาย ใจดี', '111111'], ['D2', 'วิชัย ศรีสุข', '222222'], ['D3', 'ประเสริฐ มั่นคง', '333333'], ['D4', 'อนุชา แก้วมา', '444444']];
-    drv.forEach(([id, name, pin]) => db.drivers.push({ id, name, pin, active: 'true', created_at: t + ' 08:00:00' }));
+    drv.forEach(([id, name, pin]) => db.drivers.push({ id, name, pin, phone: '', photo_url: '', active: 'true', created_at: t + ' 08:00:00' }));
+    [['V1', 'ฮข 4521', 'Toyota Commuter', 13, '#F2F4F7'], ['V2', 'นข 7788', 'Hyundai H-1', 10, '#1F2937'], ['V3', '1กก 9032', 'Toyota Commuter VIP', 9, '#9CA3AF'], ['V4', 'ศร 1150', 'Nissan Urvan', 15, '#E5E7EB']]
+      .forEach(([id, plate, name, seats, color]) => db.vehicles.push({ id, plate, name, seats, note: '', photo_url: vanPhoto(color, plate), active: 'true', created_at: t + ' 08:00:00' }));
+    const vid = (plate) => (db.vehicles.find((v) => v.plate === plate) || {}).id || '';
     let n = 0;
     function job(no, date, time, title, driver, plate, note, stops) {
       const id = 'J' + (++n);
@@ -800,7 +883,7 @@ window.STJ_CONFIG = {
       const done = st.filter((s) => s.status === 'arrived').length;
       const first = st.find((s) => s.arrived_at);
       db.jobs.push({ id, job_no: 'JOB-' + date.slice(2).replace(/-/g, '') + '-' + String(no).padStart(2, '0'), date, time, title,
-        driver_id: driver, plate, note, status: done === 0 ? 'pending' : done === st.length ? 'done' : 'in_progress',
+        driver_id: driver, plate, vehicle_id: vid(plate), note, status: done === 0 ? 'pending' : done === st.length ? 'done' : 'in_progress',
         route_polyline: '', distance_km: null, duration_min: null, created_at: date + ' 05:00:00', updated_at: date + ' 05:00:00',
         started_at: first ? first.arrived_at : '', finished_at: done === st.length && done ? st[st.length - 1].arrived_at : '' });
     }
@@ -820,7 +903,7 @@ window.STJ_CONFIG = {
   function load() {
     try {
       const db = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (db && db.jobs) return db;
+      if (db && db.jobs && db.vehicles) return db;
     } catch (e) { /* สร้างใหม่ */ }
     const db = seed();
     save(db);
@@ -847,14 +930,16 @@ window.STJ_CONFIG = {
     const stops = db.stops.filter((s) => s.job_id === j.id).sort((a, b) => a.seq - b.seq)
       .map((s) => Object.assign({}, s, { photos: s.photos || (s.photo_url ? [s.photo_url] : []) }));
     const d = db.drivers.find((x) => x.id === j.driver_id);
-    return Object.assign({}, j, { driver_name: d ? d.name : '(ไม่พบคนขับ)', stops,
+    const v = (db.vehicles || []).find((x) => x.id === j.vehicle_id);
+    return Object.assign({}, j, { driver_name: d ? d.name : '(ไม่พบคนขับ)', driver_photo_url: d ? d.photo_url || '' : '', stops,
+      vehicle_name: v ? v.name : '', vehicle_photo_url: v ? v.photo_url : '', vehicle_seats: v ? v.seats : null,
       total_count: stops.length, done_count: stops.filter((s) => s.status === 'arrived').length, checkin_radius_m: radius(db) });
   }
   const sortJobs = (a, b) => ((a.date + (a.time || '99:99') + a.job_no) < (b.date + (b.time || '99:99') + b.job_no) ? -1 : 1);
 
   const A = {
     ping: (db) => ({ app: 'Smart Tracking Jobs', version: 'demo', company: db.settings.company_name, checkin_radius_m: radius(db) }),
-    publicDrivers: (db) => db.drivers.filter((d) => d.active === 'true').map((d) => ({ id: d.id, name: d.name }))
+    publicDrivers: (db) => db.drivers.filter((d) => d.active === 'true').map((d) => ({ id: d.id, name: d.name, photo_url: d.photo_url || '' }))
       .sort((a, b) => a.name.localeCompare(b.name, 'th')),
     login(db, req) {
       if (!/^\d{6}$/.test(String(req.pin || ''))) fail('PIN ต้องเป็นตัวเลข 6 หลัก');
@@ -866,7 +951,7 @@ window.STJ_CONFIG = {
         const d = db.drivers.find((x) => x.id === req.driverId && x.active === 'true');
         if (!d) fail('ไม่พบชื่อคนขับนี้ หรือถูกปิดการใช้งานแล้ว');
         if (req.pin !== d.pin) fail('PIN ไม่ถูกต้อง', 'BAD_PIN');
-        user = { id: d.id, name: d.name };
+        user = { id: d.id, name: d.name, photo_url: d.photo_url || '' };
       }
       const token = uid() + uid();
       db.sessions.push({ token, role, user_id: user.id, name: user.name });
@@ -905,7 +990,7 @@ window.STJ_CONFIG = {
     },
     listDrivers(db, req) {
       auth(db, req, 'admin');
-      return db.drivers.map((d) => ({ id: d.id, name: d.name, active: d.active === 'true', created_at: d.created_at }))
+      return db.drivers.map((d) => ({ id: d.id, name: d.name, phone: d.phone || '', photo_url: d.photo_url || '', active: d.active === 'true', created_at: d.created_at }))
         .sort((a, b) => (a.active !== b.active ? (a.active ? -1 : 1) : a.name.localeCompare(b.name, 'th')));
     },
     saveDriver(db, req) {
@@ -921,14 +1006,39 @@ window.STJ_CONFIG = {
         const cur = db.drivers.find((x) => x.id === d.id);
         if (!cur) fail('ไม่พบคนขับ');
         cur.name = name; cur.active = active ? 'true' : 'false';
+        if (d.phone !== undefined) cur.phone = clean(d.phone, 20);
+        if (d.photo) cur.photo_url = d.photo; else if (d.removePhoto) cur.photo_url = '';
         if (pin) cur.pin = pin;
         if (pin || !active) db.sessions = db.sessions.filter((s) => !(s.role === 'driver' && s.user_id === cur.id));
-        return { id: cur.id, name, active };
+        return { id: cur.id, name, active, photo_url: cur.photo_url };
       }
       if (!pin) fail('กรุณาตั้ง PIN 6 หลักให้คนขับ');
       const id = 'D' + uid();
-      db.drivers.push({ id, name, pin, active: 'true', created_at: UI.bkkNow().stamp });
-      return { id, name, active: true };
+      db.drivers.push({ id, name, pin, phone: clean(d.phone, 20), photo_url: d.photo || '', active: 'true', created_at: UI.bkkNow().stamp });
+      return { id, name, active: true, photo_url: d.photo || '' };
+    },
+    listVehicles(db, req) {
+      auth(db, req, 'admin');
+      return (db.vehicles || []).map((v) => Object.assign({}, v, { active: v.active === 'true' }))
+        .sort((a, b) => (a.active !== b.active ? (a.active ? -1 : 1) : a.plate.localeCompare(b.plate, 'th')));
+    },
+    saveVehicle(db, req) {
+      auth(db, req, 'admin');
+      db.vehicles = db.vehicles || [];
+      const v = req.vehicle || {};
+      const plate = clean(v.plate, 20).replace(/\s+/g, ' ');
+      const seats = v.seats === '' || v.seats === null || v.seats === undefined ? null : Number(v.seats);
+      const active = !(v.active === false || v.active === 'false');
+      if (!plate) fail('กรุณาใส่ทะเบียนรถ');
+      if (seats !== null && (!isFinite(seats) || seats < 1 || seats > 99)) fail('จำนวนที่นั่งต้องเป็นตัวเลข 1–99');
+      const norm = (x) => String(x).replace(/\s+/g, '').toLowerCase();
+      if (active && db.vehicles.some((x) => x.active === 'true' && x.id !== v.id && norm(x.plate) === norm(plate))) fail(`มีรถทะเบียน "${plate}" อยู่แล้ว`);
+      let cur = v.id ? db.vehicles.find((x) => x.id === v.id) : null;
+      if (v.id && !cur) fail('ไม่พบรถคันนี้');
+      if (!cur) { cur = { id: 'V' + uid(), created_at: UI.bkkNow().stamp, photo_url: '' }; db.vehicles.push(cur); }
+      Object.assign(cur, { plate, name: clean(v.name, 60), seats, note: clean(v.note, 200), active: active ? 'true' : 'false' });
+      if (v.photo) cur.photo_url = v.photo; else if (v.removePhoto) cur.photo_url = '';
+      return Object.assign({}, cur, { active });
     },
     listJobs(db, req) {
       const s = auth(db, req);
@@ -955,8 +1065,11 @@ window.STJ_CONFIG = {
       const inp = req.job || {}, stopsIn = req.stops || [];
       if (!isDate(inp.date)) fail('กรุณาเลือกวันที่');
       if (!inp.driver_id) fail('กรุณาเลือกคนขับ');
-      const plate = clean(inp.plate, 20);
-      if (!plate) fail('กรุณาใส่ทะเบียนรถ');
+      let plate = clean(inp.plate, 20);
+      const veh = inp.vehicle_id ? (db.vehicles || []).find((x) => x.id === inp.vehicle_id) : null;
+      if (inp.vehicle_id && !veh) fail('ไม่พบรถที่เลือก');
+      if (veh) plate = veh.plate;
+      if (!plate) fail('กรุณาเลือกรถ');
       if (!stopsIn.length) fail('กรุณาเพิ่มสถานที่อย่างน้อย 1 จุด');
       if (stopsIn.length > 25) fail('เพิ่มสถานที่ได้สูงสุด 25 จุดต่อ Job');
       const drv = db.drivers.find((d) => d.id === inp.driver_id);
@@ -993,7 +1106,7 @@ window.STJ_CONFIG = {
       });
       const status = arrived === 0 ? 'pending' : arrived === stopsIn.length ? 'done' : 'in_progress';
       const rec = { id, job_no: jobNo, date: inp.date, time: /^\d{2}:\d{2}$/.test(inp.time || '') ? inp.time : '', title: clean(inp.title, 120),
-        driver_id: drv.id, plate, note: clean(inp.note, 500), status, route_polyline: '', distance_km: null, duration_min: null,
+        driver_id: drv.id, plate, vehicle_id: veh ? veh.id : '', note: clean(inp.note, 500), status, route_polyline: '', distance_km: null, duration_min: null,
         created_at: job ? job.created_at : now, updated_at: now, started_at: job ? job.started_at : '',
         finished_at: status === 'done' ? (job && job.finished_at) || now : '' };
       if (job) Object.assign(job, rec); else db.jobs.push(rec);
@@ -1225,7 +1338,7 @@ window.STJ_CONFIG = {
   function shell(active, inner) {
     const s = API.session() || {};
     const items = [['#/admin', 'ภาพรวม', 'home', 'home'], ['#/admin/jobs', 'Job', 'list', 'jobs'],
-      ['#/admin/drivers', 'คนขับ', 'users', 'drivers'], ['#/admin/settings', 'ตั้งค่า', 'settings', 'settings']];
+      ['#/admin/vehicles', 'รถ', 'van', 'vehicles'], ['#/admin/drivers', 'คนขับ', 'users', 'drivers'], ['#/admin/settings', 'ตั้งค่า', 'settings', 'settings']];
     return `${App.demoBar()}
     <header class="topbar"><div class="topbar-in">
       <a class="brand" href="#/admin">${UI.brandMark()}<span class="brand-text"><b>Smart Tracking</b><span>${esc(s.company || '')}</span></span></a>
@@ -1341,9 +1454,9 @@ window.STJ_CONFIG = {
         html += `<div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="mono" style="font-size:16px">${esc(job.job_no)}</span>${chip(job.status)}</div>
           <div style="font-size:18px;font-weight:700;line-height:1.35">${esc(UI.jobTitle(job))}</div>
-          <div class="kv">
-            <div><span class="k">คนขับ</span><span class="v">${esc(job.driver_name)}</span></div>
-            <div><span class="k">ทะเบียนรถ</span><span class="v mono">${esc(job.plate)}</span></div>
+          <div class="grid g2 keep" style="gap:8px">
+            <div class="pick-card" style="padding:8px 10px">${UI.avatar(job.driver_name, job.driver_photo_url, 40)}<div style="min-width:0"><div class="s">คนขับ</div><div class="t" style="font-size:14px">${esc(job.driver_name)}</div></div></div>
+            <div class="pick-card" style="padding:8px 10px">${UI.vehicleThumb(job.vehicle_photo_url, 52, 38)}<div style="min-width:0"><div class="s">รถ</div><div class="t mono" style="font-size:14px">${esc(job.plate)}</div></div></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:8px">
             <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">ความคืบหน้า</span><b>${job.done_count}/${job.total_count} จุด</b></div>
@@ -1469,23 +1582,19 @@ window.STJ_CONFIG = {
     const editId = params[0] || null;
     const copyId = query.get('copy');
     mount('jobs', loading('กำลังเตรียมข้อมูล…'));
-    let drivers, places, recent, src = null;
+    let drivers, places, vehicles, src = null;
     try {
-      const t = UI.today();
-      [drivers, places, recent, src] = await Promise.all([
-        API.call('listDrivers'), API.call('listPlaces'),
-        API.call('listJobs', { from: UI.addDays(t, -60), to: UI.addDays(t, 30) }),
+      [drivers, places, vehicles, src] = await Promise.all([
+        API.call('listDrivers'), API.call('listPlaces'), API.call('listVehicles'),
         editId || copyId ? API.call('getJob', { id: editId || copyId }) : Promise.resolve(null)
       ]);
     } catch (e) { mount('jobs', errorBox(e)); return; }
-
-    const plates = Array.from(new Set(recent.map((j) => j.plate).filter(Boolean)));
     const st = {
-      job: { id: editId || '', date: App.state.dashDate || UI.today(), time: '', title: '', driver_id: '', plate: '', note: '' },
+      job: { id: editId || '', date: App.state.dashDate || UI.today(), time: '', title: '', driver_id: '', vehicle_id: '', plate: '', note: '' },
       stops: [], tab: 'search', results: null, preview: null, dirtyRoute: !editId, original: editId ? src : null
     };
     if (src) {
-      const keep = ['time', 'title', 'driver_id', 'plate', 'note'];
+      const keep = ['time', 'title', 'driver_id', 'vehicle_id', 'plate', 'note'];
       keep.forEach((k) => { st.job[k] = src[k] || ''; });
       if (editId) st.job.date = src.date;
       st.stops = src.stops.map((s) => ({
@@ -1495,6 +1604,7 @@ window.STJ_CONFIG = {
     }
     if (editId && src.status === 'cancelled') { mount('jobs', `<div class="banner bad">Job นี้ถูกยกเลิกแล้ว แก้ไขไม่ได้</div><a class="back" href="#/admin/jobs/${esc(editId)}">← กลับ</a>`); return; }
     const activeDrivers = drivers.filter((d) => d.active || d.id === st.job.driver_id);
+    const activeVehicles = vehicles.filter((v) => v.active || v.id === st.job.vehicle_id);
     const started = editId && src.status !== 'pending';
 
     mount('jobs', `
@@ -1518,8 +1628,13 @@ window.STJ_CONFIG = {
               </select>${started ? '<span class="hint">เริ่มงานแล้ว เปลี่ยนคนขับไม่ได้</span>' : (activeDrivers.length ? '' : '<span class="hint">ยังไม่มีคนขับ — <a href="#/admin/drivers">เพิ่มคนขับ</a></span>')}</label>
             </div>
             <div class="grid g2" style="margin-top:16px">
-              <label class="field"><span>ทะเบียนรถ *</span><input class="input" data-j="plate" list="plate-list" value="${esc(st.job.plate)}" placeholder="เช่น ฮข 4521" maxlength="20">
-                <datalist id="plate-list">${plates.map((p) => `<option value="${esc(p)}">`).join('')}</datalist></label>
+              <label class="field"><span>รถ *</span><select class="input" data-j="vehicle_id">
+                <option value="">— เลือกรถ —</option>
+                ${activeVehicles.map((v) => `<option value="${esc(v.id)}" ${v.id === st.job.vehicle_id ? 'selected' : ''}>${esc(v.plate)}${v.name ? ' · ' + esc(v.name) : ''}${v.seats ? ' · ' + v.seats + ' ที่นั่ง' : ''}${v.active ? '' : ' (ปิดใช้งาน)'}</option>`).join('')}
+              </select>${activeVehicles.length ? '' : '<span class="hint">ยังไม่มีรถ — <a href="#/admin/vehicles">เพิ่มรถพร้อมทะเบียน</a> ก่อน</span>'}${!st.job.vehicle_id && st.job.plate ? `<span class="hint">Job เดิมใช้ทะเบียน ${esc(st.job.plate)} (ยังไม่ได้ผูกกับรถในระบบ)</span>` : ''}</label>
+              <div class="field"><span>&nbsp;</span><div id="pick-preview" style="display:flex;flex-direction:column;gap:8px"></div></div>
+            </div>
+            <div class="grid g1" style="margin-top:16px">
               <label class="field"><span>ชื่องาน</span><input class="input" data-j="title" value="${esc(st.job.title)}" placeholder="เช่น รับพนักงานกะเช้า, ทัวร์อยุธยา" maxlength="120"></label>
             </div>
             <label class="field" style="margin-top:16px"><span>หมายเหตุถึงคนขับ</span><textarea class="input" data-j="note" maxlength="500" placeholder="เช่น โทรแจ้งลูกค้าก่อนถึง 5 นาที">${esc(st.job.note)}</textarea></label>
@@ -1545,7 +1660,14 @@ window.STJ_CONFIG = {
       </div>`);
 
     $$('[data-j]').forEach((el) => el.addEventListener('input', () => { st.job[el.dataset.j] = el.value; drawSummary(); }));
-    $$('[data-j]').forEach((el) => el.addEventListener('change', () => { st.job[el.dataset.j] = el.value; drawSummary(); }));
+    $$('[data-j]').forEach((el) => el.addEventListener('change', () => { st.job[el.dataset.j] = el.value; drawSummary(); drawPick(); }));
+
+    function drawPick() {
+      const d = drivers.find((x) => x.id === st.job.driver_id);
+      const v = vehicles.find((x) => x.id === st.job.vehicle_id);
+      $('#pick-preview').innerHTML = (v ? `<div class="pick-card">${UI.vehicleThumb(v.photo_url, 76, 50)}<div><div class="t">${esc(v.plate)}</div><div class="s">${esc(v.name || 'รถ')}${v.seats ? ' · ' + v.seats + ' ที่นั่ง' : ''}</div></div></div>` : '') +
+        (d ? `<div class="pick-card">${UI.avatar(d.name, d.photo_url, 44)}<div><div class="t">${esc(d.name)}</div><div class="s">คนขับ${d.phone ? ' · ' + esc(d.phone) : ''}</div></div></div>` : '');
+    }
 
     function drawStops() {
       $('#s-count').textContent = `(${st.stops.length} จุด)`;
@@ -1604,7 +1726,7 @@ window.STJ_CONFIG = {
       const drv = drivers.find((d) => d.id === st.job.driver_id);
       $('#summary').innerHTML = `<b style="font-size:16px">สรุป</b>
         <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">วันที่</span><b>${esc(UI.fmtDate(st.job.date))}${st.job.time ? ' · ' + esc(st.job.time) : ''}</b></div>
-        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">คนขับ / รถ</span><b>${esc(drv ? drv.name : '-')} · ${esc(st.job.plate || '-')}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">คนขับ / รถ</span><b>${esc(drv ? drv.name : '-')} · ${esc((vehicles.find((v) => v.id === st.job.vehicle_id) || {}).plate || st.job.plate || '-')}</b></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">จำนวนสถานที่</span><b>${st.stops.length} จุด</b></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">ช่วงเวลานัด</span><b>${times.length ? esc(times[0]) + ' – ' + esc(times[times.length - 1]) : '-'}</b></div>
         <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">ระยะทางประมาณ</span><b>${!st.dirtyRoute && o && o.distance_km ? o.distance_km + ' กม. · ' + o.duration_min + ' นาที' : 'คำนวณหลังบันทึก'}</b></div>`;
@@ -1730,7 +1852,7 @@ window.STJ_CONFIG = {
       const j = st.job;
       if (!j.date) return toast('กรุณาเลือกวันที่', 'bad');
       if (!j.driver_id) return toast('กรุณาเลือกคนขับ', 'bad');
-      if (!j.plate.trim()) return toast('กรุณาใส่ทะเบียนรถ', 'bad');
+      if (!j.vehicle_id && !String(j.plate || '').trim()) return toast('กรุณาเลือกรถ', 'bad');
       if (!st.stops.length) return toast('กรุณาเพิ่มสถานที่อย่างน้อย 1 จุด', 'bad');
       const empty = st.stops.findIndex((s) => !String(s.name || '').trim());
       if (empty >= 0) return toast(`สถานที่จุดที่ ${empty + 1} ยังไม่มีชื่อ`, 'bad');
@@ -1749,7 +1871,7 @@ window.STJ_CONFIG = {
     }
     $$('[data-save]').forEach((b) => b.addEventListener('click', () => save(b)));
 
-    drawStops(); drawAdd(); drawMap(); drawSummary();
+    drawStops(); drawAdd(); drawMap(); drawSummary(); drawPick();
   };
 
   /* ====================== รายละเอียด Job ====================== */
@@ -1793,8 +1915,8 @@ window.STJ_CONFIG = {
             <div class="kv">
               <div><span class="k">วันที่</span><span class="v">${esc(UI.fmtDate(job.date))}</span></div>
               <div><span class="k">เวลาเริ่มงาน</span><span class="v">${esc(job.time ? job.time + ' น.' : '-')}</span></div>
-              <div><span class="k">คนขับ</span><span class="v">${esc(job.driver_name)}</span></div>
-              <div><span class="k">ทะเบียนรถ</span><span class="v mono">${esc(job.plate)}</span></div>
+              <div style="grid-column:1/-1;flex-direction:row;align-items:center;gap:12px">${UI.avatar(job.driver_name, job.driver_photo_url, 48)}<div><span class="k">คนขับ</span><div class="v">${esc(job.driver_name)}</div></div></div>
+              <div style="grid-column:1/-1;flex-direction:row;align-items:center;gap:12px">${UI.vehicleThumb(job.vehicle_photo_url, 72, 48)}<div><span class="k">รถ</span><div class="v mono">${esc(job.plate)}</div>${job.vehicle_name ? `<div class="small muted">${esc(job.vehicle_name)}${job.vehicle_seats ? ' · ' + job.vehicle_seats + ' ที่นั่ง' : ''}</div>` : ''}</div></div>
               <div><span class="k">ระยะทางประมาณ</span><span class="v">${job.distance_km ? job.distance_km + ' กม.' : '-'}</span></div>
               <div><span class="k">เวลาขับประมาณ</span><span class="v">${job.duration_min ? job.duration_min + ' นาที' : '-'}</span></div>
               <div><span class="k">เช็คอินจุดแรก</span><span class="v">${esc(job.started_at ? UI.fmtStamp(job.started_at) : '-')}</span></div>
@@ -1875,26 +1997,21 @@ window.STJ_CONFIG = {
   /* ====================== คนขับ ====================== */
   V.drivers = async function () {
     mount('drivers', `
-      <div class="page-head"><div><h1>คนขับ</h1><div class="sub">เพิ่มคนขับ ตั้ง PIN และปิดการใช้งาน</div></div></div>
+      <div class="page-head"><div><h1>คนขับ</h1><div class="sub">เพิ่มคนขับ ใส่รูปหน้า ตั้ง PIN และปิดการใช้งาน</div></div>
+        <div class="actions"><button type="button" class="btn btn-primary" data-add>${icon('plus', 18)}เพิ่มคนขับ</button></div></div>
       <div class="split">
         <section class="main card" aria-label="รายชื่อคนขับ"><div class="card-head"><h2 id="dr-count">รายชื่อคนขับ</h2></div><div id="dr-list">${loading()}</div></section>
         <aside class="side">
-          <form class="card card-pad" id="dr-form" style="display:flex;flex-direction:column;gap:14px" autocomplete="off">
-            <h2 style="font-size:18px">เพิ่มคนขับ</h2>
-            <label class="field"><span>ชื่อที่แสดงในแอป</span><input class="input" name="name" maxlength="60" placeholder="เช่น สมชาย ใจดี" required></label>
-            <label class="field"><span>PIN 6 หลัก</span><input class="input mono" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required>
-              <span class="hint">บอก PIN นี้กับคนขับ ใช้เข้าแอปคู่กับชื่อ</span></label>
-            <button class="btn btn-primary" type="submit">${icon('plus', 18)}เพิ่มคนขับ</button>
-          </form>
           <section class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
             <b>ให้คนขับเข้าแอป</b>
-            <ol class="steps-mini"><li>ส่งลิงก์แอปให้คนขับ</li><li>คนขับเปิดในมือถือ แล้วกด "เพิ่มลงหน้าจอหลัก"</li><li>เลือกชื่อตัวเอง แล้วใส่ PIN</li></ol>
+            <ol class="steps-mini"><li>ส่งลิงก์แอปให้คนขับ</li><li>คนขับเปิดในมือถือ แล้วกด "เพิ่มลงหน้าจอหลัก"</li><li>เลือกชื่อ (เห็นรูปหน้าตัวเอง) แล้วใส่ PIN</li></ol>
             <div class="actions"><button type="button" class="btn btn-sm" data-copy-link>${icon('copy', 16)}คัดลอกลิงก์</button>
               <a class="btn btn-sm" href="https://line.me/R/msg/text/?${encodeURIComponent('ลิงก์แอปรับงาน ' + API.driverLink())}" target="_blank" rel="noopener">${icon('chat', 16)}ส่งทาง LINE</a></div>
           </section>
         </aside>
       </div>`);
     $('[data-copy-link]').addEventListener('click', () => UI.copyText(API.driverLink()));
+    $('[data-add]').addEventListener('click', () => editDriver(null));
 
     let list = [];
     async function load() {
@@ -1902,58 +2019,156 @@ window.STJ_CONFIG = {
     }
     function draw() {
       $('#dr-count').textContent = `รายชื่อคนขับ (${list.filter((d) => d.active).length} คนที่ใช้งาน)`;
-      if (!list.length) { $('#dr-list').innerHTML = `<div class="empty">${icon('users', 36)}<div>ยังไม่มีคนขับ — เพิ่มจากฟอร์มด้านขวา</div></div>`; return; }
-      $('#dr-list').innerHTML = `<div class="table-wrap"><table class="tbl" style="min-width:560px"><thead><tr><th>ชื่อ</th><th>สถานะ</th><th>เพิ่มเมื่อ</th><th style="text-align:right;padding-right:20px">จัดการ</th></tr></thead><tbody>
+      if (!list.length) { $('#dr-list').innerHTML = `<div class="empty">${icon('users', 36)}<div>ยังไม่มีคนขับ</div><button type="button" class="btn btn-primary btn-sm" data-add2>${icon('plus', 16)}เพิ่มคนขับ</button></div>`; $('[data-add2]').addEventListener('click', () => editDriver(null)); return; }
+      $('#dr-list').innerHTML = `<div class="table-wrap"><table class="tbl" style="min-width:600px"><thead><tr><th>คนขับ</th><th>เบอร์โทร</th><th>สถานะ</th><th style="text-align:right;padding-right:20px">จัดการ</th></tr></thead><tbody>
         ${list.map((d, i) => `<tr>
-          <td><div style="display:flex;align-items:center;gap:10px"><span class="avatar" style="background:var(--brand-soft);color:var(--brand-dark);width:32px;height:32px;font-size:14px">${esc(d.name.slice(0, 1))}</span><b>${esc(d.name)}</b></div></td>
+          <td><div style="display:flex;align-items:center;gap:12px">${UI.avatar(d.name, d.photo_url, 44)}<div><b>${esc(d.name)}</b><div class="small muted">เพิ่มเมื่อ ${esc(d.created_at ? UI.fmtDate(d.created_at, { short: true, noDay: true }) : '-')}</div></div></div></td>
+          <td>${d.phone ? `<a href="tel:${esc(d.phone)}">${esc(d.phone)}</a>` : '<span class="muted">-</span>'}</td>
           <td>${d.active ? '<span class="chip st-done">ใช้งาน</span>' : '<span class="chip st-cancelled">ปิดใช้งาน</span>'}</td>
-          <td class="small muted">${esc(d.created_at ? UI.fmtDate(d.created_at, { short: true, noDay: true }) : '-')}</td>
           <td style="text-align:right;padding-right:20px;white-space:nowrap">
+            <button type="button" class="btn btn-sm" data-act="edit" data-i="${i}">${icon('edit', 16)}แก้ไข</button>
             <button type="button" class="btn btn-sm" data-act="pin" data-i="${i}">${icon('key', 16)}ตั้ง PIN ใหม่</button>
-            <button type="button" class="btn btn-sm" data-act="name" data-i="${i}" aria-label="แก้ชื่อ ${esc(d.name)}">${icon('edit', 16)}</button>
             <button type="button" class="btn btn-sm ${d.active ? 'btn-danger' : ''}" data-act="toggle" data-i="${i}">${d.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}</button>
           </td></tr>`).join('')}</tbody></table></div>`;
       $$('[data-act]', $('#dr-list')).forEach((b) => b.addEventListener('click', () => act(b.dataset.act, list[Number(b.dataset.i)])));
     }
     async function act(kind, d) {
+      if (kind === 'edit') return editDriver(d);
       if (kind === 'toggle') {
         if (d.active && !(await UI.confirmBox(`ปิดการใช้งาน ${d.name}? คนขับจะเข้าแอปไม่ได้ (ประวัติงานยังอยู่)`, 'ปิดใช้งาน', true))) return;
         try { await API.call('saveDriver', { driver: { id: d.id, name: d.name, active: !d.active } }); toast(d.active ? 'ปิดใช้งานแล้ว' : 'เปิดใช้งานแล้ว', 'good'); load(); }
         catch (e) { toast(e.message, 'bad'); }
         return;
       }
-      const isPin = kind === 'pin';
       const m = UI.modal({
-        title: isPin ? `ตั้ง PIN ใหม่ · ${d.name}` : 'แก้ชื่อคนขับ',
-        body: isPin
-          ? `<label class="field"><span>PIN ใหม่ 6 หลัก</span><input class="input mono" id="m-in" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off"></label><div class="muted small">คนขับจะต้องเข้าระบบใหม่ด้วย PIN นี้</div>`
-          : `<label class="field"><span>ชื่อที่แสดงในแอป</span><input class="input" id="m-in" maxlength="60" value="${esc(d.name)}"></label>`,
+        title: `ตั้ง PIN ใหม่ · ${d.name}`,
+        body: `<label class="field"><span>PIN ใหม่ 6 หลัก</span><input class="input mono" id="m-in" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off"></label><div class="muted small">คนขับจะต้องเข้าระบบใหม่ด้วย PIN นี้</div>`,
         foot: `<button class="btn" data-close>ยกเลิก</button><button class="btn btn-primary" data-ok>บันทึก</button>`
       });
       const ok = m.el.querySelector('[data-ok]');
       ok.addEventListener('click', async () => {
         const v = m.el.querySelector('#m-in').value.trim();
-        if (isPin && !/^\d{6}$/.test(v)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก', 'bad'); return; }
+        if (!/^\d{6}$/.test(v)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก', 'bad'); return; }
+        busy(ok, true);
+        try { await API.call('saveDriver', { driver: { id: d.id, name: d.name, active: d.active, pin: v } }); m.close(); toast('บันทึกแล้ว', 'good'); load(); }
+        catch (e) { toast(e.message, 'bad'); busy(ok, false); }
+      });
+    }
+    function editDriver(d) {
+      const isNew = !d;
+      const m = UI.modal({
+        title: isNew ? 'เพิ่มคนขับ' : `แก้ไขข้อมูล · ${d.name}`,
+        body: `${photoField(d && d.photo_url, true, 'รูปหน้าคนขับ')}
+          <label class="field"><span>ชื่อที่แสดงในแอป *</span><input class="input" id="f-name" maxlength="60" value="${esc(d ? d.name : '')}" placeholder="เช่น สมชาย ใจดี"></label>
+          <label class="field"><span>เบอร์โทร</span><input class="input" id="f-phone" type="tel" inputmode="tel" maxlength="20" value="${esc(d ? d.phone || '' : '')}" placeholder="08x-xxx-xxxx"></label>
+          ${isNew ? `<label class="field"><span>PIN 6 หลัก *</span><input class="input mono" id="f-pin" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off" placeholder="••••••"><span class="hint">บอก PIN นี้กับคนขับ ใช้เข้าแอปคู่กับชื่อ</span></label>` : ''}`,
+        foot: `<button class="btn" data-close>ยกเลิก</button><button class="btn btn-primary" data-ok>${isNew ? 'เพิ่มคนขับ' : 'บันทึก'}</button>`
+      });
+      const ph = bindPhotoField(m.el, true);
+      const ok = m.el.querySelector('[data-ok]');
+      ok.addEventListener('click', async () => {
+        const name = m.el.querySelector('#f-name').value.trim();
+        const pin = isNew ? m.el.querySelector('#f-pin').value.trim() : '';
+        if (!name) return toast('กรุณาใส่ชื่อคนขับ', 'bad');
+        if (isNew && !/^\d{6}$/.test(pin)) return toast('PIN ต้องเป็นตัวเลข 6 หลัก', 'bad');
         busy(ok, true);
         try {
-          await API.call('saveDriver', { driver: Object.assign({ id: d.id, name: isPin ? d.name : v, active: d.active }, isPin ? { pin: v } : {}) });
-          m.close(); toast('บันทึกแล้ว', 'good'); load();
+          const payload = Object.assign({ name, phone: m.el.querySelector('#f-phone').value.trim() }, ph.value());
+          if (isNew) payload.pin = pin; else Object.assign(payload, { id: d.id, active: d.active });
+          await API.call('saveDriver', { driver: payload });
+          m.close(); toast(isNew ? `เพิ่ม ${name} แล้ว` : 'บันทึกแล้ว', 'good'); load();
         } catch (e) { toast(e.message, 'bad'); busy(ok, false); }
       });
     }
-    $('#dr-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fm = e.target, btn = fm.querySelector('button[type=submit]');
-      const name = fm.name.value.trim(), pin = fm.pin.value.trim();
-      if (!/^\d{6}$/.test(pin)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก', 'bad'); return; }
-      busy(btn, true);
+    load();
+  };
+
+  /* ---------- ช่องเลือกรูป (ใช้กับคนขับและรถ) ---------- */
+  function photoField(url, round, label) {
+    return `<div class="field"><span>${esc(label)}</span><div class="photo-field">
+      <div class="prev ${round ? 'round' : ''}" data-prev>${url ? `<img src="${esc(url)}" alt="">` : icon(round ? 'users' : 'van', 32)}</div>
+      <div class="actions"><button type="button" class="btn btn-sm" data-pick>${icon('camera', 16)}${url ? 'เปลี่ยนรูป' : 'เลือกรูป / ถ่ายรูป'}</button>
+        <button type="button" class="btn btn-sm btn-ghost ${url ? '' : 'hidden'}" data-unpick>ลบรูป</button></div></div></div>`;
+  }
+  function bindPhotoField(root, round) {
+    const st = { photo: null, removePhoto: false };
+    const prev = root.querySelector('[data-prev]'), un = root.querySelector('[data-unpick]');
+    root.querySelector('[data-pick]').addEventListener('click', async () => {
+      const f = await UI.pickImage();
+      if (!f) return;
       try {
-        await API.call('saveDriver', { driver: { name, pin } });
-        toast(`เพิ่ม ${name} แล้ว`, 'good');
-        fm.reset(); load();
-      } catch (err) { toast(err.message, 'bad'); }
-      busy(btn, false);
+        st.photo = await UI.resizeImage(f, API.isDemo() ? 360 : (round ? 600 : 1000), round);
+        st.removePhoto = false;
+        prev.innerHTML = `<img src="${st.photo}" alt="">`;
+        un.classList.remove('hidden');
+      } catch (e) { toast('อ่านรูปไม่ได้', 'bad'); }
     });
+    un.addEventListener('click', () => {
+      st.photo = null; st.removePhoto = true;
+      prev.innerHTML = icon(round ? 'users' : 'van', 32);
+      un.classList.add('hidden');
+    });
+    return { value: () => (st.photo ? { photo: st.photo } : st.removePhoto ? { removePhoto: true } : {}) };
+  }
+
+  /* ====================== รถ ====================== */
+  V.vehicles = async function () {
+    mount('vehicles', `
+      <div class="page-head"><div><h1>รถ</h1><div class="sub">ลงทะเบียนรถไว้ก่อน แล้วเลือกใช้ตอนสร้าง Job</div></div>
+        <div class="actions"><button type="button" class="btn btn-primary" data-add>${icon('plus', 18)}เพิ่มรถ</button></div></div>
+      <section class="card" aria-label="รายการรถ"><div class="card-head"><h2 id="v-count">รถทั้งหมด</h2></div><div id="v-list">${loading()}</div></section>`);
+    let list = [];
+    async function load() {
+      try { list = await API.call('listVehicles'); draw(); } catch (e) { $('#v-list').innerHTML = errorBox(e); }
+    }
+    function draw() {
+      $('#v-count').textContent = `รถทั้งหมด (${list.filter((v) => v.active).length} คันที่ใช้งาน)`;
+      if (!list.length) { $('#v-list').innerHTML = `<div class="empty">${icon('van', 40)}<div>ยังไม่มีรถในระบบ — เพิ่มรถพร้อมทะเบียนและรูปได้เลย</div><button type="button" class="btn btn-primary btn-sm" data-add2>${icon('plus', 16)}เพิ่มรถ</button></div>`; $('[data-add2]').addEventListener('click', () => edit(null)); return; }
+      $('#v-list').innerHTML = `<div class="veh-grid">${list.map((v, i) => `<article class="veh-card ${v.active ? '' : 'off'}">
+          <div class="pic">${v.photo_url ? `<img src="${esc(v.photo_url)}" alt="รูปรถ ${esc(v.plate)}">` : icon('van', 48)}</div>
+          <div class="info"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="plate">${esc(v.plate)}</span>${v.active ? '<span class="chip st-done">ใช้งาน</span>' : '<span class="chip st-cancelled">ปิดใช้งาน</span>'}</div>
+            <span class="muted small">${esc(v.name || 'ไม่ระบุรุ่น')}${v.seats ? ` · ${v.seats} ที่นั่ง` : ''}</span>
+            ${v.note ? `<span class="small">${esc(v.note)}</span>` : ''}</div>
+          <div class="tools"><button type="button" class="btn btn-sm" data-edit="${i}">${icon('edit', 16)}แก้ไข</button>
+            <button type="button" class="btn btn-sm ${v.active ? 'btn-danger' : ''}" data-tog="${i}">${v.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}</button></div>
+        </article>`).join('')}</div>`;
+      $$('[data-edit]').forEach((b) => b.addEventListener('click', () => edit(list[Number(b.dataset.edit)])));
+      $$('[data-tog]').forEach((b) => b.addEventListener('click', async () => {
+        const v = list[Number(b.dataset.tog)];
+        if (v.active && !(await UI.confirmBox(`ปิดการใช้งานรถ ${v.plate}? จะเลือกใช้ใน Job ใหม่ไม่ได้ (ประวัติยังอยู่)`, 'ปิดใช้งาน', true))) return;
+        try { await API.call('saveVehicle', { vehicle: { id: v.id, plate: v.plate, name: v.name, seats: v.seats, note: v.note, active: !v.active } }); toast('บันทึกแล้ว', 'good'); load(); }
+        catch (e) { toast(e.message, 'bad'); }
+      }));
+    }
+    function edit(v) {
+      const isNew = !v;
+      const m = UI.modal({
+        title: isNew ? 'เพิ่มรถ' : `แก้ไขรถ · ${v.plate}`,
+        body: `${photoField(v && v.photo_url, false, 'รูปรถ')}
+          <div class="grid g2" style="gap:12px">
+            <label class="field"><span>ทะเบียนรถ *</span><input class="input" id="f-plate" maxlength="20" value="${esc(v ? v.plate : '')}" placeholder="เช่น ฮข 4521"></label>
+            <label class="field"><span>จำนวนที่นั่ง</span><input class="input" id="f-seats" type="number" min="1" max="99" inputmode="numeric" value="${esc(v && v.seats ? v.seats : '')}" placeholder="เช่น 13"></label>
+          </div>
+          <label class="field"><span>รุ่น / ชื่อเรียก</span><input class="input" id="f-vname" maxlength="60" value="${esc(v ? v.name || '' : '')}" placeholder="เช่น Toyota Commuter สีขาว"></label>
+          <label class="field"><span>หมายเหตุ</span><input class="input" id="f-note" maxlength="200" value="${esc(v ? v.note || '' : '')}" placeholder="เช่น ต่อภาษี มี.ค., มีที่วางกระเป๋า"></label>`,
+        foot: `<button class="btn" data-close>ยกเลิก</button><button class="btn btn-primary" data-ok>${isNew ? 'เพิ่มรถ' : 'บันทึก'}</button>`
+      });
+      const ph = bindPhotoField(m.el, false);
+      const ok = m.el.querySelector('[data-ok]');
+      ok.addEventListener('click', async () => {
+        const plate = m.el.querySelector('#f-plate').value.trim();
+        if (!plate) return toast('กรุณาใส่ทะเบียนรถ', 'bad');
+        busy(ok, true);
+        try {
+          await API.call('saveVehicle', { vehicle: Object.assign({
+            id: v ? v.id : '', plate, seats: m.el.querySelector('#f-seats').value, name: m.el.querySelector('#f-vname').value.trim(),
+            note: m.el.querySelector('#f-note').value.trim(), active: v ? v.active : true
+          }, ph.value()) });
+          m.close(); toast(isNew ? `เพิ่มรถ ${plate} แล้ว` : 'บันทึกแล้ว', 'good'); load();
+        } catch (e) { toast(e.message, 'bad'); busy(ok, false); }
+      });
+    }
+    $('[data-add]').addEventListener('click', () => edit(null));
     load();
   };
 
@@ -2095,7 +2310,7 @@ window.STJ_CONFIG = {
   V.driverHome = async function () {
     const s = API.session();
     mount(head(`<div class="row1">
-        <span class="avatar" style="width:44px;height:44px;font-size:18px" aria-hidden="true">${esc((s.user.name || '?').slice(0, 1))}</span>
+        ${UI.avatar(s.user.name, s.user.photo_url, 44, 'border:2px solid rgba(255,255,255,.25)')}
         <div style="flex:1 1 auto;min-width:0"><h1>สวัสดี ${esc(s.user.name)}</h1><div class="sub">${esc(UI.fmtDate(UI.today()))} · ${esc(s.company || '')}</div></div>
         <button type="button" class="icon-btn" id="h-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>
         <button type="button" class="icon-btn" data-logout aria-label="ออกจากระบบ">${icon('logout')}</button>
@@ -2135,7 +2350,7 @@ window.STJ_CONFIG = {
       const label = active ? 'ทำงานต่อ' : j.status === 'pending' ? 'เริ่มงาน' : 'ดูรายละเอียด';
       return `<article class="d-card ${active ? 'active' : ''}">
         <div class="top"><span class="mono small muted">${esc(j.job_no)}</span>${chip(j.status)}</div>
-        <div class="title">${esc(UI.jobTitle(j))}</div>
+        <div style="display:flex;gap:12px;align-items:center">${UI.vehicleThumb(j.vehicle_photo_url, 64, 44)}<div class="title" style="min-width:0">${esc(UI.jobTitle(j))}</div></div>
         <div class="muted small">${esc(UI.relDay(j.date))}${j.time ? ' · เริ่ม ' + esc(j.time) + ' น.' : ''} · ทะเบียน <b class="mono" style="color:var(--ink)">${esc(j.plate)}</b> · ${j.total_count} จุด</div>
         ${j.status !== 'pending' ? `<div style="display:flex;flex-direction:column;gap:6px">
           <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">${nx ? 'ถัดไป: ' + esc(nx.name) : 'ครบทุกจุดแล้ว'}</span><b>${j.done_count}/${j.total_count}</b></div>${UI.progressBar(j)}</div>`
@@ -2173,6 +2388,7 @@ window.STJ_CONFIG = {
       const cur = j.status === 'cancelled' ? null : (pending.find((s) => s.id === st.focus) || pending[0] || null);
       let html = '';
       if (j.status === 'cancelled') html += '<div class="banner bad">Job นี้ถูกยกเลิกแล้ว</div>';
+      html += `<div class="pick-card" style="background:#fff;border:1px solid var(--line)">${UI.vehicleThumb(j.vehicle_photo_url, 84, 56)}<div><div class="s">รถคันนี้</div><div class="t mono" style="font-size:17px">${esc(j.plate)}</div>${j.vehicle_name ? `<div class="s">${esc(j.vehicle_name)}${j.vehicle_seats ? ' · ' + j.vehicle_seats + ' ที่นั่ง' : ''}</div>` : ''}</div></div>`;
       if (j.note) html += `<div class="banner info" style="align-items:flex-start">${icon('note', 18)}<span style="flex:1 1 200px;white-space:pre-line"><b>หมายเหตุจากแอดมิน</b><br>${esc(j.note)}</span></div>`;
 
       if (j.status === 'cancelled') {
@@ -2523,7 +2739,7 @@ window.STJ_CONFIG = {
           <div class="name-grid" id="lg-names"></div>`;
       } else {
         body = `${st.tab === 'driver'
-          ? `<div class="who-chip"><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span class="avatar" style="background:var(--brand-soft);color:var(--brand-dark);width:32px;height:32px;font-size:14px">${esc(st.driver.name.slice(0, 1))}</span>${esc(st.driver.name)}</span><button type="button" class="btn btn-sm btn-ghost" id="lg-change">เปลี่ยนชื่อ</button></div>`
+          ? `<div class="who-chip"><span style="display:flex;align-items:center;gap:10px;font-weight:600">${UI.avatar(st.driver.name, st.driver.photo_url, 40)}${esc(st.driver.name)}</span><button type="button" class="btn btn-sm btn-ghost" id="lg-change">เปลี่ยนชื่อ</button></div>`
           : '<div style="font-weight:600">ใส่ PIN แอดมิน 6 หลัก</div>'}
           <div style="text-align:center;color:var(--muted);font-size:14px">${st.tab === 'driver' ? 'ใส่ PIN 6 หลัก' : ''}</div>
           <div class="pin-dots" id="lg-dots" aria-hidden="true">${'<i></i>'.repeat(6)}</div>
@@ -2540,7 +2756,7 @@ window.STJ_CONFIG = {
         const drawNames = () => {
           const q = ($('#lg-q') ? $('#lg-q').value : '').trim().toLowerCase();
           const list = st.drivers.filter((d) => !q || d.name.toLowerCase().includes(q));
-          $('#lg-names').innerHTML = list.length ? list.map((d) => `<button type="button" class="name-btn" data-d="${esc(d.id)}"><span class="avatar">${esc(d.name.slice(0, 1))}</span>${esc(d.name)}</button>`).join('')
+          $('#lg-names').innerHTML = list.length ? list.map((d) => `<button type="button" class="name-btn" data-d="${esc(d.id)}">${UI.avatar(d.name, d.photo_url, 32)}${esc(d.name)}</button>`).join('')
             : `<div class="muted small" style="grid-column:1/-1">${st.drivers.length ? 'ไม่พบชื่อ' : 'ยังไม่มีคนขับในระบบ — แอดมินเพิ่มคนขับได้ที่เมนู "คนขับ"'}</div>`;
           $$('[data-d]').forEach((b) => b.addEventListener('click', () => { st.driver = st.drivers.find((d) => d.id === b.dataset.d); st.pin = ''; draw(); }));
         };
@@ -2601,6 +2817,7 @@ window.STJ_CONFIG = {
     [/^#\/admin\/jobs\/([\w-]+)\/edit$/, 'admin', 'jobEdit'],
     [/^#\/admin\/jobs\/([\w-]+)$/, 'admin', 'jobDetail'],
     [/^#\/admin\/drivers$/, 'admin', 'drivers'],
+    [/^#\/admin\/vehicles$/, 'admin', 'vehicles'],
     [/^#\/admin\/settings$/, 'admin', 'settings'],
     [/^#\/driver$/, 'driver', 'driverHome'],
     [/^#\/driver\/job\/([\w-]+)$/, 'driver', 'driverJob']

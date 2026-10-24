@@ -13,7 +13,7 @@
  * PIN แอดมินเริ่มต้น: 000000 (เปลี่ยนได้ในหน้า ตั้งค่า ของแอป)
  */
 
-var APP_VERSION = '1.1.0';
+var APP_VERSION = '1.2.0';
 var DEFAULT_ADMIN_PIN = '000000';
 var SESSION_DAYS = { admin: 7, driver: 30 };
 var MAX_FAILS = 5;
@@ -24,10 +24,11 @@ var MAX_PHOTOS = 5;          // รูปเช็คอินสูงสุด
 
 var SCHEMA = {
   Settings: ['key', 'value'],
-  Drivers: ['id', 'name', 'pin_hash', 'active', 'created_at', 'updated_at'],
+  Drivers: ['id', 'name', 'pin_hash', 'active', 'created_at', 'updated_at', 'photo_id', 'photo_url', 'phone'],
+  Vehicles: ['id', 'plate', 'name', 'seats', 'note', 'photo_id', 'photo_url', 'active', 'created_at', 'updated_at'],
   Jobs: ['id', 'job_no', 'date', 'time', 'title', 'driver_id', 'plate', 'note', 'status',
          'route_polyline', 'distance_km', 'duration_min',
-         'created_at', 'updated_at', 'started_at', 'finished_at'],
+         'created_at', 'updated_at', 'started_at', 'finished_at', 'vehicle_id'],
   Stops: ['id', 'job_id', 'seq', 'name', 'address', 'lat', 'lng', 'map_url', 'note', 'planned_time',
           'status', 'arrived_at', 'arrive_lat', 'arrive_lng', 'photo_id', 'photo_url', 'checkin_note',
           'photo_urls', 'checkin_dist_m', 'checkin_acc_m'],
@@ -72,7 +73,7 @@ function doPost(e) {
 /** เรียกใช้ครั้งแรกจากหน้า Apps Script เพื่อสร้างแผ่นงานและอนุญาตสิทธิ์ */
 function setup() {
   REQ = {};
-  CacheService.getScriptCache().remove('setup_ok_v2');
+  CacheService.getScriptCache().remove('setup_ok_v3');
   ensureSetup_();
   DriveApp.getRootFolder();            // ขอสิทธิ์ Google Drive (เก็บรูปเช็คอิน)
   Maps.newGeocoder();                  // ขอสิทธิ์ค้นหาสถานที่
@@ -95,7 +96,7 @@ var ACTIONS = {
   },
   publicDrivers: function () {
     return rows_('Drivers').filter(function (d) { return d.active === 'true'; })
-      .map(function (d) { return { id: d.id, name: d.name }; })
+      .map(function (d) { return { id: d.id, name: d.name, photo_url: d.photo_url }; })
       .sort(function (a, b) { return a.name.localeCompare(b.name, 'th'); });
   },
   login: login_,
@@ -105,6 +106,8 @@ var ACTIONS = {
   saveSettings: saveSettings_,
   listDrivers: listDrivers_,
   saveDriver: saveDriver_,
+  listVehicles: listVehicles_,
+  saveVehicle: saveVehicle_,
   listJobs: listJobs_,
   getJob: getJob_,
   saveJob: saveJob_,
@@ -143,7 +146,7 @@ function login_(req) {
     checkLock_('d:' + d.id);
     if (hash_('driver:' + d.id + ':' + pin) !== d.pin_hash) badPin_('d:' + d.id);
     clearFail_('d:' + d.id);
-    var user = { id: d.id, name: d.name };
+    var user = { id: d.id, name: d.name, photo_url: d.photo_url || '' };
     var t = createSession_('driver', user);
     log_(d.name, 'login', '');
     return { token: t, role: 'driver', user: user, company: company };
@@ -199,7 +202,7 @@ function saveSettings_(req) {
 function listDrivers_(req) {
   auth_(req, 'admin');
   return rows_('Drivers').map(function (d) {
-    return { id: d.id, name: d.name, active: d.active === 'true', created_at: d.created_at };
+    return { id: d.id, name: d.name, phone: d.phone, photo_url: d.photo_url, active: d.active === 'true', created_at: d.created_at };
   }).sort(function (a, b) {
     if (a.active !== b.active) return a.active ? -1 : 1;
     return a.name.localeCompare(b.name, 'th');
@@ -212,6 +215,8 @@ function saveDriver_(req) {
   var name = clean_(d.name, 60).replace(/\s+/g, ' ');
   var pin = d.pin ? String(d.pin) : '';
   var active = !(d.active === false || d.active === 'false');
+  var phone = clean_(d.phone, 20);
+  var photo = parseImage_(d.photo);
   if (!name) fail_('กรุณาใส่ชื่อคนขับ');
   if (pin && !/^\d{6}$/.test(pin)) fail_('PIN ต้องเป็นตัวเลข 6 หลัก');
 
@@ -226,23 +231,85 @@ function saveDriver_(req) {
       var cur = all.filter(function (x) { return x.id === d.id; })[0];
       if (!cur) fail_('ไม่พบคนขับ');
       var patch = { name: name, active: active ? 'true' : 'false', updated_at: now_() };
+      if (d.phone !== undefined) patch.phone = phone;
       if (pin) patch.pin_hash = hash_('driver:' + cur.id + ':' + pin);
+      if (photo) { var f1 = savePhoto_(photo.ext, photo.b64, 'คนขับ_' + name, 'w600'); patch.photo_id = f1.id; patch.photo_url = f1.url; }
+      else if (d.removePhoto) { patch.photo_id = ''; patch.photo_url = ''; }
       update_('Drivers', cur, patch);
       if (pin || !active) killSessions_(function (s) { return s.role === 'driver' && s.user_id === cur.id; });
       if (pin) clearFail_('d:' + cur.id);
       log_('admin', 'update_driver', name + (pin ? ' (เปลี่ยน PIN)' : '') + (active ? '' : ' (ปิดใช้งาน)'));
-      return { id: cur.id, name: name, active: active };
+      return { id: cur.id, name: name, active: active, photo_url: cur.photo_url };
     }
 
     if (!pin) fail_('กรุณาตั้ง PIN 6 หลักให้คนขับ');
     var id = 'D' + shortId_();
+    var f2 = photo ? savePhoto_(photo.ext, photo.b64, 'คนขับ_' + name, 'w600') : null;
     insert_('Drivers', {
       id: id, name: name, pin_hash: hash_('driver:' + id + ':' + pin),
-      active: 'true', created_at: now_(), updated_at: now_()
+      active: 'true', created_at: now_(), updated_at: now_(),
+      photo_id: f2 ? f2.id : '', photo_url: f2 ? f2.url : '', phone: phone
     });
     log_('admin', 'add_driver', name);
-    return { id: id, name: name, active: true };
+    return { id: id, name: name, active: true, photo_url: f2 ? f2.url : '' };
   });
+}
+
+/* ====================== รถ ====================== */
+
+function listVehicles_(req) {
+  auth_(req, 'admin');
+  return rows_('Vehicles').map(vehicleOut_).sort(function (a, b) {
+    if (a.active !== b.active) return a.active ? -1 : 1;
+    return a.plate.localeCompare(b.plate, 'th');
+  });
+}
+
+function vehicleOut_(v) {
+  return { id: v.id, plate: v.plate, name: v.name, seats: num_(v.seats), note: v.note,
+           photo_url: v.photo_url, active: v.active === 'true', created_at: v.created_at };
+}
+
+function saveVehicle_(req) {
+  auth_(req, 'admin');
+  var v = req.vehicle || {};
+  var plate = clean_(v.plate, 20).replace(/\s+/g, ' ');
+  var seats = v.seats === '' || v.seats === null || v.seats === undefined ? '' : Number(v.seats);
+  var active = !(v.active === false || v.active === 'false');
+  var photo = parseImage_(v.photo);
+  if (!plate) fail_('กรุณาใส่ทะเบียนรถ');
+  if (seats !== '' && (!isFinite(seats) || seats < 1 || seats > 99)) fail_('จำนวนที่นั่งต้องเป็นตัวเลข 1–99');
+
+  return withLock_(function () {
+    var all = rows_('Vehicles');
+    var norm = function (x) { return String(x).replace(/\s+/g, '').toLowerCase(); };
+    var dup = all.filter(function (x) { return x.active === 'true' && x.id !== v.id && norm(x.plate) === norm(plate); })[0];
+    if (dup && active) fail_('มีรถทะเบียน "' + plate + '" อยู่แล้ว');
+    var rec = { plate: plate, name: clean_(v.name, 60), seats: seats, note: clean_(v.note, 200),
+                active: active ? 'true' : 'false', updated_at: now_() };
+    if (photo) { var f = savePhoto_(photo.ext, photo.b64, 'รถ_' + plate, 'w1000'); rec.photo_id = f.id; rec.photo_url = f.url; }
+    else if (v.removePhoto) { rec.photo_id = ''; rec.photo_url = ''; }
+    if (v.id) {
+      var cur = all.filter(function (x) { return x.id === v.id; })[0];
+      if (!cur) fail_('ไม่พบรถคันนี้');
+      update_('Vehicles', cur, rec);
+      log_('admin', 'update_vehicle', plate + (active ? '' : ' (ปิดใช้งาน)'));
+      return vehicleOut_(cur);
+    }
+    rec.id = 'V' + shortId_();
+    rec.created_at = now_();
+    insert_('Vehicles', rec);
+    log_('admin', 'add_vehicle', plate);
+    return vehicleOut_(rec);
+  });
+}
+
+function parseImage_(dataUrl) {
+  if (!dataUrl) return null;
+  var m = String(dataUrl).match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
+  if (!m) fail_('ไฟล์รูปไม่ถูกต้อง');
+  if (m[2].length > 8000000) fail_('รูปมีขนาดใหญ่เกินไป');
+  return { ext: m[1], b64: m[2] };
 }
 
 /* ====================== Job ====================== */
@@ -280,10 +347,11 @@ function saveJob_(req) {
   var time = String(inp.time || '');
   var driverId = String(inp.driver_id || '');
   var plate = clean_(inp.plate, 20);
+  var vehicleId = String(inp.vehicle_id || '');
   if (!isDate_(date)) fail_('กรุณาเลือกวันที่');
   if (time && !/^\d{2}:\d{2}$/.test(time)) fail_('เวลาเริ่มไม่ถูกต้อง');
   if (!driverId) fail_('กรุณาเลือกคนขับ');
-  if (!plate) fail_('กรุณาใส่ทะเบียนรถ');
+  if (!plate && !vehicleId) fail_('กรุณาเลือกรถ');
   if (!stopsIn.length) fail_('กรุณาเพิ่มสถานที่อย่างน้อย 1 จุด');
   if (stopsIn.length > 25) fail_('เพิ่มสถานที่ได้สูงสุด 25 จุดต่อ Job');
 
@@ -310,6 +378,12 @@ function saveJob_(req) {
       if (job.status === 'cancelled') fail_('Job นี้ถูกยกเลิกแล้ว แก้ไขไม่ได้');
     }
     if (drv.active !== 'true' && !(job && job.driver_id === drv.id)) fail_('คนขับคนนี้ถูกปิดการใช้งาน');
+    if (vehicleId) {
+      var veh = rows_('Vehicles').filter(function (x) { return x.id === vehicleId; })[0];
+      if (!veh) fail_('ไม่พบรถที่เลือก');
+      if (veh.active !== 'true' && !(job && job.vehicle_id === veh.id)) fail_('รถคันนี้ถูกปิดการใช้งาน');
+      plate = veh.plate;
+    }
 
     var oldStops = job ? rows_('Stops').filter(function (s) { return s.job_id === job.id; }) : [];
     var oldById = indexBy_(oldStops, 'id');
@@ -345,7 +419,7 @@ function saveJob_(req) {
     var status = arrived === 0 ? 'pending' : (arrived === clean.length ? 'done' : 'in_progress');
     var rec = {
       id: jobId, job_no: jobNo, date: date, time: time, title: clean_(inp.title, 120),
-      driver_id: drv.id, plate: plate, note: clean_(inp.note, 500), status: status,
+      driver_id: drv.id, plate: plate, vehicle_id: vehicleId, note: clean_(inp.note, 500), status: status,
       route_polyline: route ? route.polyline : '', distance_km: route ? route.km : '',
       duration_min: route ? route.min : '',
       created_at: job ? job.created_at : now_(), updated_at: now_(),
@@ -459,14 +533,14 @@ function distanceM_(lat1, lng1, lat2, lng2) {
 
 function fmtDist_(m) { return m < 1000 ? m + ' ม.' : (Math.round(m / 100) / 10) + ' กม.'; }
 
-function savePhoto_(ext, b64, base) {
+function savePhoto_(ext, b64, base, size) {
   var folder = photoFolder_();
   var bytes = Utilities.base64Decode(b64);
   var name = base + '_' + now_().replace(/[^0-9]/g, '') + '.' + (ext === 'jpeg' ? 'jpg' : ext);
   var file = folder.createFile(Utilities.newBlob(bytes, 'image/' + ext, name));
   try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
   var id = file.getId();
-  return { id: id, url: 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1600' };
+  return { id: id, url: 'https://drive.google.com/thumbnail?id=' + id + '&sz=' + (size || 'w1600') };
 }
 
 function photoFolder_() {
@@ -645,6 +719,7 @@ function getJobById_(id) {
 
 function loadJobs_(filter) {
   var radius = radius_();
+  var vehicles = indexBy_(rows_('Vehicles'), 'id');
   var drivers = indexBy_(rows_('Drivers'), 'id');
   var jobs = rows_('Jobs').filter(filter);
   var ids = {};
@@ -661,6 +736,11 @@ function loadJobs_(filter) {
     out.distance_km = num_(j.distance_km);
     out.duration_min = num_(j.duration_min);
     out.driver_name = (drivers[j.driver_id] || {}).name || '(ไม่พบคนขับ)';
+    out.driver_photo_url = (drivers[j.driver_id] || {}).photo_url || '';
+    var veh = j.vehicle_id ? vehicles[j.vehicle_id] : null;
+    out.vehicle_name = veh ? veh.name : '';
+    out.vehicle_photo_url = veh ? veh.photo_url : '';
+    out.vehicle_seats = veh ? num_(veh.seats) : null;
     out.stops = stops;
     out.total_count = stops.length;
     out.done_count = stops.filter(function (s) { return s.status === 'arrived'; }).length;
@@ -754,7 +834,7 @@ function clearFail_(key) { CacheService.getScriptCache().remove('fail:' + key); 
 
 function ensureSetup_() {
   var cache = CacheService.getScriptCache();
-  if (cache.get('setup_ok_v2')) return;
+  if (cache.get('setup_ok_v3')) return;
   var ss = ss_();
   Object.keys(SCHEMA).forEach(function (name) {
     var cols = SCHEMA[name];
@@ -774,7 +854,7 @@ function ensureSetup_() {
     if (!getSetting_('company_name')) setSetting_('company_name', 'บริษัทของฉัน');
   }
   if (getSetting_('checkin_radius_m') === '') setSetting_('checkin_radius_m', String(DEFAULT_RADIUS_M));
-  cache.put('setup_ok_v2', '1', 21600);
+  cache.put('setup_ok_v3', '1', 21600);
 }
 
 function getSetting_(key) {
