@@ -1,0 +1,2488 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Tracking Jobs</title>
+<meta name="description" content="ระบบจ่ายงานและเช็คอินรถตู้ สำหรับเจ้าของและคนขับ">
+<meta name="theme-color" content="#0B1F33">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Smart Tracking">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzBCMUYzMyIvPjxyZWN0IHg9Ijk2IiB5PSI5NiIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIzMjAiIHJ4PSI4MCIgZmlsbD0iIzBFNkJBOCIvPjxwYXRoIGQ9Ik0yNTYgMzYwcy04NC03NC04NC0xMzhhODQgODQgMCAwIDEgMTY4IDBjMCA2NC04NCAxMzgtODQgMTM4eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjIyIiByPSIzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjI0Ii8+PC9zdmc+Cg==">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0iIzBCMUYzMyIvPjxyZWN0IHg9Ijk2IiB5PSI5NiIgd2lkdGg9IjMyMCIgaGVpZ2h0PSIzMjAiIHJ4PSI4MCIgZmlsbD0iIzBFNkJBOCIvPjxwYXRoIGQ9Ik0yNTYgMzYwcy04NC03NC04NC0xMzhhODQgODQgMCAwIDEgMTY4IDBjMCA2NC04NCAxMzgtODQgMTM4eiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjI2IiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PGNpcmNsZSBjeD0iMjU2IiBjeT0iMjIyIiByPSIzMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjI0Ii8+PC9zdmc+Cg==">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<!-- Smart Tracking Jobs v1.0.0 · ไฟล์นี้สร้างจาก src/ ด้วย dev/build.mjs -->
+<style>
+/* Smart Tracking Jobs — สไตล์หลัก */
+:root {
+  --brand: #0E6BA8;
+  --brand-dark: #0A4F7D;
+  --brand-soft: #E1EFF8;
+  --navy: #0B1F33;
+  --navy-2: #23415F;
+  --ink: #0B1F33;
+  --ink-2: #3D4752;
+  --muted: #4E5D6C;
+  --line: #E1E6EC;
+  --line-2: #CBD3DC;
+  --bg: #F4F6F9;
+  --card: #FFFFFF;
+  --good: #2B7A3B;
+  --good-soft: #E6F4EA;
+  --good-ink: #1F5E2C;
+  --warn: #B45309;
+  --warn-soft: #FFF1E6;
+  --warn-ink: #9A3B07;
+  --bad: #B42318;
+  --bad-soft: #FDECEC;
+  --bad-ink: #9B2222;
+  --radius: 14px;
+  --font: 'IBM Plex Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: var(--brand); }
+a:hover { color: var(--brand-dark); }
+button, input, select, textarea { font: inherit; color: inherit; }
+img { max-width: 100%; display: block; }
+h1, h2, h3 { margin: 0; line-height: 1.3; }
+.mono { font-family: var(--mono); font-weight: 600; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- โหลด ---------- */
+.boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--muted); }
+.spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--brand); animation: spin .8s linear infinite; }
+.spinner.sm { width: 16px; height: 16px; border-width: 2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-block { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 48px 16px; color: var(--muted); }
+
+/* ---------- หัวเว็บแอดมิน ---------- */
+.demo-bar { background: #FFF7D6; color: #6B4E00; font-size: 13px; padding: 7px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: center; text-align: center; }
+.demo-bar button { background: none; border: 0; color: #6B4E00; text-decoration: underline; cursor: pointer; padding: 4px; font-size: 13px; }
+.topbar { background: var(--navy); color: #fff; position: sticky; top: 0; z-index: 900; }
+.topbar-in { max-width: 1360px; margin: 0 auto; padding: 0 20px; min-height: 64px; display: flex; align-items: center; gap: 20px; }
+.brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; min-width: 0; }
+.brand:hover { color: #fff; }
+.brand-mark { width: 34px; height: 34px; border-radius: 9px; background: var(--brand); display: flex; align-items: center; justify-content: center; flex: none; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.brand-text b { font-size: 16px; white-space: nowrap; }
+.brand-text span { font-size: 12px; color: #A9B8C8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.nav { display: flex; gap: 4px; flex: 1 1 auto; overflow-x: auto; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav a { color: #C9D5E2; text-decoration: none; padding: 9px 14px; border-radius: 9px; white-space: nowrap; display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.nav a:hover { color: #fff; background: rgba(255,255,255,.06); }
+.nav a.on { color: #fff; background: rgba(255,255,255,.13); font-weight: 600; }
+.top-user { display: flex; align-items: center; gap: 10px; flex: none; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--navy-2); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 600; flex: none; }
+.icon-btn { width: 44px; height: 44px; border-radius: 10px; border: 0; background: transparent; color: inherit; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+.icon-btn:hover { background: rgba(127,127,127,.12); }
+.topbar .icon-btn { color: #C9D5E2; }
+@media (max-width: 760px) {
+  .topbar-in { flex-wrap: wrap; padding: 8px 12px 0; gap: 8px 12px; min-height: 0; }
+  .brand { flex: 1 1 auto; }
+  .nav { order: 3; flex-basis: 100%; padding-bottom: 6px; }
+  .nav a { padding: 8px 12px; font-size: 14px; }
+  .top-user .who { display: none; }
+}
+
+/* ---------- เนื้อหา ---------- */
+.page { max-width: 1360px; margin: 0 auto; padding: 26px 20px 60px; display: flex; flex-direction: column; gap: 20px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; }
+.page-head h1 { font-size: 27px; font-weight: 700; }
+.page-head .sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+.back { font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 4px; min-height: 32px; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+@media (max-width: 760px) { .page { padding: 18px 12px 48px; gap: 16px; } .page-head h1 { font-size: 23px; } }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+.card-pad { padding: 20px; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.card-head h2 { font-size: 17px; }
+.card h2.title { font-size: 18px; margin-bottom: 14px; }
+.split { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.split > .main { flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.split > .side { flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.split.stretch { align-items: stretch; }
+
+/* ---------- ปุ่ม ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--line-2); background: #fff; color: var(--ink); font-weight: 600; text-decoration: none; cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s; }
+.btn:hover { background: #F7F9FB; color: var(--ink); }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+.btn-dark { background: var(--navy); border-color: var(--navy); color: #fff; }
+.btn-dark:hover { background: #142f4b; color: #fff; }
+.btn-good { background: var(--good); border-color: var(--good); color: #fff; }
+.btn-good:hover { background: #22652F; color: #fff; }
+.btn-danger { color: var(--bad); border-color: #F3C7C7; }
+.btn-danger:hover { background: var(--bad-soft); color: var(--bad); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-sm { min-height: 36px; padding: 0 12px; font-size: 14px; border-radius: 9px; }
+.btn-lg { min-height: 56px; font-size: 17px; border-radius: 14px; padding: 0 22px; }
+.btn-block { width: 100%; }
+.btn .spinner { border-color: rgba(255,255,255,.35); border-top-color: #fff; }
+.btn:not(.btn-primary):not(.btn-dark):not(.btn-good) .spinner { border-color: var(--line); border-top-color: var(--brand); }
+.sq { width: 44px; padding: 0; flex: none; }
+
+/* ---------- ฟอร์ม ---------- */
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > span, .field > label { font-size: 14px; font-weight: 600; }
+.field .hint { font-size: 13px; color: var(--muted); font-weight: 400; }
+.input, select.input, textarea.input { width: 100%; padding: 10px 12px; min-height: 46px; border: 1px solid var(--line-2); border-radius: 10px; background: #fff; font-weight: 400; }
+textarea.input { min-height: 80px; resize: vertical; }
+.input:focus, .btn:focus-visible, .icon-btn:focus-visible, a:focus-visible { outline: 3px solid rgba(14,107,168,.35); outline-offset: 1px; border-color: var(--brand); }
+.input.sm { min-height: 38px; padding: 6px 10px; font-size: 14px; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .g3, .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .g2, .g3 { grid-template-columns: minmax(0, 1fr); } }
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
+.check input { width: 18px; height: 18px; }
+
+/* ---------- ตัวเลขสรุป ---------- */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.tile { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.tile .k { color: var(--muted); font-size: 14px; }
+.tile .v { font-size: 32px; font-weight: 700; line-height: 1.05; }
+.tile.blue .v { color: var(--brand); }
+.tile.green .v { color: var(--good); }
+.tile.orange { background: var(--warn-soft); border-color: #F7D2B5; }
+.tile.orange .k { color: var(--warn-ink); }
+.tile.orange .v { color: var(--warn); }
+
+/* ---------- สถานะ ---------- */
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; background: #EEF1F4; color: var(--ink-2); }
+.chip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .8; }
+.st-pending { background: #EEF1F4; color: #3D4752; }
+.st-in_progress { background: var(--brand-soft); color: var(--brand-dark); }
+.st-done { background: var(--good-soft); color: var(--good-ink); }
+.st-cancelled { background: var(--bad-soft); color: var(--bad-ink); }
+.st-arrived { background: var(--good-soft); color: var(--good-ink); }
+.chip.plain::before { display: none; }
+
+.banner { border-radius: 12px; padding: 12px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 14px; }
+.banner.warn { background: var(--warn-soft); color: var(--warn-ink); border: 1px solid #F7D2B5; }
+.banner.info { background: var(--brand-soft); color: var(--brand-dark); }
+.banner.bad { background: var(--bad-soft); color: var(--bad-ink); border: 1px solid #F3C7C7; }
+.banner.good { background: var(--good-soft); color: var(--good-ink); }
+.banner a { color: inherit; font-weight: 600; }
+
+.progress { height: 8px; background: #E8EDF1; border-radius: 999px; overflow: hidden; }
+.progress > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+.progress.done > i { background: var(--good); }
+
+/* ---------- ตาราง ---------- */
+.table-wrap { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 760px; }
+.tbl th { text-align: left; color: var(--muted); font-size: 13px; font-weight: 600; background: #F8FAFB; padding: 11px 14px; white-space: nowrap; }
+.tbl td { padding: 13px 14px; border-top: 1px solid #EEF1F4; vertical-align: middle; }
+.tbl tr.click { cursor: pointer; }
+.tbl tr.click:hover td { background: #F8FAFB; }
+.tbl th:first-child, .tbl td:first-child { padding-left: 20px; }
+.empty { padding: 40px 16px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.empty svg { color: #AEB9C5; }
+
+/* ---------- แผนที่ ---------- */
+.map { height: 500px; background: #E8EDF1; position: relative; z-index: 0; }
+.map.sm { height: 320px; }
+.map.xs { height: 240px; }
+@media (max-width: 760px) { .map { height: 360px; } }
+.map-card { overflow: hidden; display: flex; flex-direction: column; }
+.map-note { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 500; background: rgba(255,255,255,.94); padding: 10px 16px; border-radius: 10px; font-size: 14px; color: var(--muted); text-align: center; pointer-events: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.pin { width: 30px; height: 30px; border-radius: 50%; background: #fff; color: var(--ink); border: 3px solid var(--brand); display: flex; align-items: center; justify-content: center; font: 700 13px var(--font); box-shadow: 0 2px 6px rgba(11,31,51,.3); }
+.pin.done { background: var(--good); border-color: #fff; color: #fff; box-shadow: 0 0 0 2px var(--good), 0 2px 6px rgba(11,31,51,.3); }
+.pin.next { background: var(--brand); color: #fff; border-color: #fff; box-shadow: 0 0 0 2px var(--brand), 0 0 0 7px rgba(14,107,168,.22); }
+.pin-cam { width: 14px; height: 14px; border-radius: 50%; background: #7C3AED; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); }
+.leaflet-popup-content { font-family: var(--font); font-size: 14px; margin: 12px 14px; min-width: 180px; }
+.leaflet-popup-content img { border-radius: 8px; margin-top: 8px; width: 220px; max-height: 165px; object-fit: cover; }
+.leaflet-container { font-family: var(--font); }
+
+/* ---------- รายการ Job ---------- */
+.job-list { display: flex; flex-direction: column; gap: 4px; padding: 8px; }
+.job-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: transparent; border: 0; border-radius: 10px; padding: 10px 12px; min-height: 58px; cursor: pointer; }
+.job-row:hover { background: #F4F6F9; }
+.job-row.on { background: #EAF2F8; }
+.job-row .grow { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.job-row .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.job-row .s { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.kv > div { background: #F4F6F9; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kv .k { font-size: 12px; color: var(--muted); }
+.kv .v { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.info-row { display: flex; flex-direction: column; gap: 2px; }
+.info-row .k { font-size: 13px; color: var(--muted); }
+.info-row .v { font-weight: 600; }
+
+/* ---------- จุดแวะ (ฟอร์ม) ---------- */
+.stop-edit { display: flex; gap: 14px; align-items: flex-start; border: 1px solid var(--line); border-radius: 12px; padding: 14px; flex-wrap: wrap; background: #fff; }
+.stop-edit.locked { background: #F7FBF8; border-color: #CBE6D2; }
+.num { width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex: none; }
+.num.done { background: var(--good); }
+.num.idle { background: #fff; color: var(--muted); border: 2px solid var(--line-2); }
+.stop-edit .body { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.stop-edit .meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); align-items: center; }
+.stop-edit .tools { display: flex; gap: 6px; flex: none; }
+.tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: #EEF1F4; color: var(--ink-2); }
+.tag.good { background: var(--good-soft); color: var(--good-ink); }
+.tag.warn { background: var(--warn-soft); color: var(--warn-ink); }
+.add-box { border: 1px dashed #AEB9C5; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.tabs { display: flex; gap: 4px; background: #EEF1F4; padding: 4px; border-radius: 11px; flex-wrap: wrap; }
+.tabs button { flex: 1 1 auto; border: 0; background: transparent; padding: 8px 12px; border-radius: 8px; font-weight: 600; color: var(--muted); cursor: pointer; min-height: 40px; }
+.tabs button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(11,31,51,.12); }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.row > .grow { flex: 1 1 240px; min-width: 0; }
+.result { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; }
+.result .grow { flex: 1 1 auto; min-width: 0; }
+.result .t { font-weight: 600; }
+.result .s { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.embed { width: 100%; height: 220px; border: 0; border-radius: 10px; background: #E8EDF1; }
+
+/* ---------- ไทม์ไลน์จุดแวะ ---------- */
+.timeline { display: flex; flex-direction: column; }
+.tl-item { display: flex; gap: 14px; position: relative; padding-bottom: 18px; }
+.tl-item:not(:last-child)::before { content: ''; position: absolute; left: 15px; top: 34px; bottom: 0; width: 2px; background: var(--line); }
+.tl-item.done:not(:last-child)::before { background: #B8DCC2; }
+.tl-item .body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.tl-item .name { font-weight: 600; font-size: 16px; }
+.tl-photo { display: flex; gap: 12px; align-items: flex-start; margin-top: 6px; flex-wrap: wrap; }
+.tl-photo button { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 10px; overflow: hidden; flex: none; }
+.tl-photo img { width: 148px; height: 111px; object-fit: cover; background: #E8EDF1; }
+
+/* ---------- ฝั่งคนขับ ---------- */
+.phone { max-width: 560px; margin: 0 auto; min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; }
+.d-head { background: var(--navy); color: #fff; padding: calc(18px + env(safe-area-inset-top)) 16px 18px; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 0; z-index: 900; }
+.d-head .row1 { display: flex; align-items: center; gap: 8px; }
+.d-head h1 { font-size: 22px; font-weight: 700; }
+.d-head .sub { font-size: 14px; color: #C9D5E2; }
+.d-head .icon-btn { color: #fff; background: rgba(255,255,255,.08); }
+.d-head .icon-btn:hover { background: rgba(255,255,255,.16); }
+.d-body { flex: 1 1 auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+.d-sec { font-size: 14px; font-weight: 600; color: var(--muted); margin-top: 6px; }
+.d-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.d-card.active { border: 2px solid var(--brand); }
+.d-card .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.d-card .title { font-size: 18px; font-weight: 700; line-height: 1.35; }
+.cur-stop { background: #fff; border: 2px solid var(--brand); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.cur-stop .name { font-size: 22px; font-weight: 700; line-height: 1.3; }
+.cur-stop .addr { font-size: 15px; color: var(--muted); }
+.big-check { min-height: 64px; font-size: 19px; border-radius: 16px; }
+.step-list { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.step { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; }
+.step + .step { border-top: 1px solid #F0F2F5; }
+.step .grow { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.done-card { background: #fff; border: 2px solid var(--good); border-radius: 18px; padding: 26px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.done-ico { width: 68px; height: 68px; border-radius: 50%; background: var(--good-soft); color: var(--good); display: flex; align-items: center; justify-content: center; }
+
+/* ---------- เข้าสู่ระบบ ---------- */
+.auth { min-height: 100vh; background: var(--navy); display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.auth-card { width: 100%; max-width: 440px; background: #fff; border-radius: 22px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.auth-top { padding: 28px 26px 18px; display: flex; flex-direction: column; gap: 14px; }
+.auth-top .brand-mark { width: 52px; height: 52px; border-radius: 14px; }
+.auth-top h1 { font-size: 24px; }
+.auth-body { padding: 4px 26px 28px; display: flex; flex-direction: column; gap: 16px; }
+@media (max-width: 480px) {
+  .auth { padding: 0; align-items: stretch; }
+  .auth-card { border-radius: 0; max-width: none; display: flex; flex-direction: column; }
+  .auth-top { background: var(--navy); color: #fff; padding: calc(40px + env(safe-area-inset-top)) 24px 30px; }
+  .auth-top .muted { color: #C9D5E2; }
+  .auth-body { flex: 1 1 auto; border-radius: 22px 22px 0 0; margin-top: -16px; background: #fff; padding-top: 24px; }
+}
+.name-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-height: 340px; overflow-y: auto; }
+.name-btn { min-height: 56px; border: 1px solid var(--line-2); border-radius: 12px; background: #fff; font-weight: 600; font-size: 16px; cursor: pointer; padding: 8px 10px; display: flex; align-items: center; gap: 10px; text-align: left; }
+.name-btn:hover { border-color: var(--brand); background: #F5FAFD; }
+.name-btn .avatar { background: var(--brand-soft); color: var(--brand-dark); width: 32px; height: 32px; font-size: 14px; }
+.pin-dots { display: flex; justify-content: center; gap: 14px; padding: 6px 0; }
+.pin-dots i { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-2); }
+.pin-dots i.on { background: var(--navy); border-color: var(--navy); }
+.pin-dots.err { animation: shake .35s; }
+.pin-dots.err i { border-color: var(--bad); }
+@keyframes shake { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }
+.keypad { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.keypad button { min-height: 60px; border-radius: 14px; border: 0; background: #F0F3F6; font-size: 24px; font-weight: 600; cursor: pointer; }
+.keypad button:hover { background: #E4E9EE; }
+.keypad button:active { background: #D6DDE4; }
+.keypad button.fn { background: transparent; font-size: 15px; color: var(--muted); }
+.who-chip { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #F4F6F9; border-radius: 12px; padding: 8px 8px 8px 14px; }
+
+/* ---------- หน้าต่างลอย ---------- */
+.modal-bg { position: fixed; inset: 0; background: rgba(11,31,51,.55); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; animation: fade .15s; }
+.modal { background: #fff; border-radius: 18px; width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; display: flex; flex-direction: column; }
+.modal.wide { max-width: 860px; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 8px; }
+.modal-head h3 { font-size: 19px; }
+.modal-body { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+.modal-foot { padding: 0 18px 18px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .modal-bg { align-items: flex-end; padding: 0; }
+  .modal { border-radius: 20px 20px 0 0; max-height: 92vh; padding-bottom: env(safe-area-inset-bottom); }
+  .modal-foot .btn { flex: 1 1 auto; }
+}
+@keyframes fade { from { opacity: 0; } }
+.photo-preview { width: 100%; max-height: 52vh; object-fit: contain; background: #0B1F33; border-radius: 12px; }
+
+/* ---------- แจ้งเตือน ---------- */
+#toasts { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 8px; align-items: center; width: calc(100% - 32px); max-width: 460px; pointer-events: none; }
+.toast { background: var(--navy); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.2); animation: up .2s; pointer-events: auto; max-width: 100%; }
+.toast.bad { background: var(--bad); }
+.toast.good { background: var(--good); }
+@keyframes up { from { transform: translateY(10px); opacity: 0; } }
+
+/* ---------- ตั้งค่า ---------- */
+.setting-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
+.copy-box { display: flex; gap: 8px; }
+.copy-box .input { font-family: var(--mono); font-size: 13px; }
+.steps-mini { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); font-size: 14px; }
+
+/* ---------- ปรับแต่งเพิ่มเติม ---------- */
+.map-card > .map { flex: 1 1 auto; min-height: 500px; }
+.map-card > .map.sm { min-height: 320px; }
+.map-card > .map.xs { min-height: 240px; }
+@media (max-width: 760px) { .map-card > .map { min-height: 360px; } }
+.g2.keep { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+@media (min-width: 1000px) { .side.sticky { position: sticky; top: 84px; } }
+img.img-broken { object-fit: contain !important; background: #EEF1F4; }
+.tbl td.mono { white-space: nowrap; }
+
+</style>
+</head>
+<body>
+<div id="app" aria-live="polite"><div class="boot"><div class="spinner"></div><span>กำลังโหลด…</span></div></div>
+<div id="toasts" aria-live="assertive"></div>
+<noscript>กรุณาเปิดใช้งาน JavaScript เพื่อใช้ระบบนี้</noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>/* ---- config.js ---- */
+/*
+ * ตั้งค่าแอป Smart Tracking Jobs
+ * ปกติไม่ต้องแก้ไฟล์นี้ — ลิงก์ระบบหลังบ้านใส่ผ่านหน้า "เชื่อมต่อระบบ" ในแอปได้เลย
+ * ถ้าต้องการล็อกแอปชุดนี้ให้ลูกค้ารายเดียว ให้ใส่ลิงก์เว็บแอป (ลงท้าย /exec) ที่ API_URL
+ */
+window.STJ_CONFIG = {
+  APP_NAME: 'Smart Tracking Jobs',
+  API_URL: '',
+  BRAND: '#0E6BA8',
+  TILE_URL: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  TILE_ATTRIBUTION: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+  GUIDE_URL: 'https://github.com/finalflukle-cpu/smart-tracking-jobs/blob/main/SETUP.md'
+};
+
+</script>
+<script>/* ---- assets/ui.js ---- */
+/* ตัวช่วยหน้าจอ: รูปแบบวันที่ ไอคอน ปุ่ม หน้าต่าง แผนที่ */
+(function () {
+  'use strict';
+  const CONFIG = window.STJ_CONFIG || {};
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+  const esc = (s) => String(s === null || s === undefined ? '' : s)
+    .replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /* ---------- วันเวลา (เวลาไทย) ---------- */
+  const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+  function bkkNow() {
+    const t = new Date(Date.now() + 7 * 3600000);
+    const p = (n) => String(n).padStart(2, '0');
+    return {
+      date: `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}`,
+      time: `${p(t.getUTCHours())}:${p(t.getUTCMinutes())}`,
+      stamp: `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())} ${p(t.getUTCHours())}:${p(t.getUTCMinutes())}:${p(t.getUTCSeconds())}`
+    };
+  }
+  const today = () => bkkNow().date;
+  function addDays(date, n) {
+    const d = new Date(date + 'T00:00:00Z');
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  }
+  function fmtDate(date, opts) {
+    if (!date) return '-';
+    const d = new Date(String(date).slice(0, 10) + 'T00:00:00Z');
+    if (isNaN(d)) return String(date);
+    const y = d.getUTCFullYear() + 543;
+    const s = `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${opts && opts.short ? String(y).slice(2) : y}`;
+    return opts && opts.noDay ? s : `${DAYS[d.getUTCDay()]} ${s}`;
+  }
+  function relDay(date) {
+    const t = today();
+    if (date === t) return 'วันนี้';
+    if (date === addDays(t, 1)) return 'พรุ่งนี้';
+    if (date === addDays(t, -1)) return 'เมื่อวาน';
+    return fmtDate(date);
+  }
+  const hhmm = (ts) => (ts ? String(ts).slice(11, 16) : '');
+  function fmtStamp(ts) {
+    if (!ts) return '-';
+    const d = String(ts).slice(0, 10);
+    return (d === today() ? 'วันนี้' : fmtDate(d, { noDay: true, short: true })) + ' ' + hhmm(ts);
+  }
+  function minutesDiff(planned, stamp) {
+    if (!planned || !stamp) return null;
+    const [ph, pm] = planned.split(':').map(Number);
+    const [ah, am] = hhmm(stamp).split(':').map(Number);
+    return (ah * 60 + am) - (ph * 60 + pm);
+  }
+
+  function fmtMin(m) {
+    const h = Math.floor(m / 60), r = m % 60;
+    return h ? `${h} ชม.${r ? ' ' + r + ' นาที' : ''}` : `${m} นาที`;
+  }
+  // รูปที่โหลดไม่ได้ (เช่น ไฟล์ใน Drive ถูกจำกัดสิทธิ์) แสดงเป็นภาพแทน
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!img || img.tagName !== 'IMG' || img.classList.contains('img-broken') || img.classList.contains('leaflet-tile')) return;
+    img.classList.add('img-broken');
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120"><rect width="160" height="120" fill="#EEF1F4"/><g fill="none" stroke="#8A96A3" stroke-width="4" stroke-linejoin="round"><path d="M50 48h12l6-9h24l6 9h12v34H50z"/><circle cx="80" cy="64" r="10"/></g><text x="80" y="104" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#4E5D6C">แตะเพื่อเปิดรูป</text></svg>');
+  }, true);
+
+  /* ---------- สถานะ ---------- */
+  const STATUS = {
+    pending: 'รอเริ่ม', in_progress: 'กำลังทำ', done: 'เสร็จสิ้น', cancelled: 'ยกเลิก', arrived: 'เช็คอินแล้ว'
+  };
+  const chip = (st) => `<span class="chip st-${esc(st)}">${esc(STATUS[st] || st)}</span>`;
+  function jobTitle(j) {
+    if (j.title) return j.title;
+    const s = j.stops || [];
+    if (!s.length) return 'Job ' + j.job_no;
+    return s.length === 1 ? s[0].name : `${s[0].name} → ${s[s.length - 1].name}`;
+  }
+  const nextStop = (j) => (j.stops || []).find((s) => s.status !== 'arrived') || null;
+  const pct = (j) => (j.total_count ? Math.round((j.done_count / j.total_count) * 100) : 0);
+  function progressBar(j) {
+    return `<div class="progress ${j.status === 'done' ? 'done' : ''}" role="progressbar" aria-valuenow="${pct(j)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct(j)}%"></i></div>`;
+  }
+  function lastCheckin(j) {
+    return (j.stops || []).filter((s) => s.arrived_at).sort((a, b) => (a.arrived_at < b.arrived_at ? 1 : -1))[0] || null;
+  }
+
+  /* ---------- ไอคอน ---------- */
+  const P = {
+    pin: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+    logout: '<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/>',
+    camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+    nav: '<path d="M3 11l18-8-8 18-2-8-8-2z"/>',
+    check: '<path d="M5 12l5 5 9-10"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    up: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+    down: '<path d="M12 5v14M5 12l7 7 7-7"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    list: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.5 3.6-5.5 6.5-5.5s5.5 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.7.7 2.9 2.4 3.5 5.2"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+    home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+    clock: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+    share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
+    back: '<path d="M15 18l-6-6 6-6"/>',
+    van: '<path d="M3 7h11l4 4h3v6h-2"/><path d="M3 7v10h2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/><path d="M9.5 17.5h5M14 7v4h7"/>',
+    route: '<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h8a3 3 0 0 0 0-6H8a3 3 0 0 1 0-6h8"/>',
+    note: '<path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5M8 13h8M8 17h5"/>',
+    external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+    chat: '<path d="M4 5h16v11H9l-5 4z"/>'
+  };
+  function icon(name, size, extra) {
+    return `<svg width="${size || 20}" height="${size || 20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra || ''}>${P[name] || ''}</svg>`;
+  }
+  const brandMark = (size) => `<span class="brand-mark">${icon('pin', size || 19, 'stroke="#fff"')}</span>`;
+
+  /* ---------- แจ้งเตือนและปุ่ม ---------- */
+  function toast(msg, type) {
+    const box = $('#toasts');
+    const el = document.createElement('div');
+    el.className = 'toast ' + (type || '');
+    el.textContent = msg;
+    box.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, type === 'bad' ? 4200 : 2600);
+    setTimeout(() => el.remove(), type === 'bad' ? 4600 : 3000);
+  }
+  function busy(btn, on, text) {
+    if (!btn) return;
+    if (on) {
+      btn.dataset.html = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="spinner sm"></span>${esc(text || 'กำลังบันทึก…')}`;
+    } else {
+      btn.disabled = false;
+      if (btn.dataset.html) btn.innerHTML = btn.dataset.html;
+    }
+  }
+
+  function modal({ title, body, foot, wide, onClose }) {
+    const bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.innerHTML = `<div class="modal ${wide ? 'wide' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title || '')}">
+      <div class="modal-head"><h3>${esc(title || '')}</h3><button type="button" class="icon-btn" data-close aria-label="ปิด">${icon('x')}</button></div>
+      <div class="modal-body">${body || ''}</div>
+      ${foot ? `<div class="modal-foot">${foot}</div>` : ''}
+    </div>`;
+    const prevFocus = document.activeElement;
+    function close() {
+      bg.remove();
+      document.removeEventListener('keydown', onKey);
+      if (onClose) onClose();
+      if (prevFocus && prevFocus.focus) prevFocus.focus();
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    bg.addEventListener('click', (e) => { if (e.target === bg || e.target.closest('[data-close]')) close(); });
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(bg);
+    const first = bg.querySelector('input, textarea, select, .modal-foot .btn-primary');
+    if (first) setTimeout(() => first.focus(), 30);
+    return { el: bg, close };
+  }
+  function confirmBox(message, okText, danger) {
+    return new Promise((resolve) => {
+      let done = false;
+      const m = modal({
+        title: 'ยืนยัน',
+        body: `<p style="margin:0">${esc(message)}</p>`,
+        foot: `<button class="btn" data-close>ยกเลิก</button><button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-ok>${esc(okText || 'ตกลง')}</button>`,
+        onClose: () => { if (!done) resolve(false); }
+      });
+      m.el.querySelector('[data-ok]').addEventListener('click', () => { done = true; m.close(); resolve(true); });
+    });
+  }
+  function showPhoto(url, caption) {
+    modal({ title: caption || 'รูปเช็คอิน', wide: true,
+      body: `<img src="${esc(url)}" alt="${esc(caption || 'รูปเช็คอิน')}" class="photo-preview" style="max-height:75vh">` +
+        (/^https:/.test(url) ? `<a href="${esc(url.replace('thumbnail?id=', 'file/d/').replace(/&sz=.*$/, '/view'))}" target="_blank" rel="noopener">เปิดรูปขนาดเต็มใน Google Drive</a>` : '') });
+  }
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); toast('คัดลอกแล้ว', 'good'); }
+    catch (e) {
+      const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); toast('คัดลอกแล้ว', 'good'); } catch (e2) { toast('คัดลอกไม่ได้', 'bad'); }
+      t.remove();
+    }
+  }
+
+  /* ---------- ลิงก์ Google Maps ---------- */
+  const hasXY = (s) => s && s.lat !== null && s.lat !== undefined && s.lng !== null && s.lng !== undefined && s.lat !== '' && s.lng !== '';
+  function navUrl(stop) {
+    if (hasXY(stop)) return `https://www.google.com/maps/dir/?api=1&destination=${stop.lat},${stop.lng}&travelmode=driving`;
+    if (stop.map_url) return stop.map_url;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((stop.name || '') + ' ' + (stop.address || ''))}`;
+  }
+  function placeUrl(stop) {
+    if (stop.map_url) return stop.map_url;
+    if (hasXY(stop)) return `https://www.google.com/maps/search/?api=1&query=${stop.lat},${stop.lng}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stop.name || '')}`;
+  }
+  function routeUrl(stops) {
+    const pts = (stops || []).map((s) => (hasXY(s) ? `${s.lat},${s.lng}` : (s.name + ' ' + (s.address || '')).trim()));
+    if (!pts.length) return '';
+    if (pts.length === 1) return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pts[0])}&travelmode=driving`;
+    const mid = pts.slice(1, -1).slice(0, 9);
+    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(pts[0])}&destination=${encodeURIComponent(pts[pts.length - 1])}` +
+      (mid.length ? `&waypoints=${encodeURIComponent(mid.join('|'))}` : '') + '&travelmode=driving';
+  }
+  function distanceM(a, b) {
+    if (!hasXY(a) || !hasXY(b)) return null;
+    const R = 6371000, toR = (x) => (x * Math.PI) / 180;
+    const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng / 2) ** 2;
+    return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+  }
+  const fmtDist = (m) => (m === null ? '' : m < 1000 ? `${m} ม.` : `${(m / 1000).toFixed(1)} กม.`);
+
+  /* อ่านพิกัดจากลิงก์ Google Maps แบบเต็ม (ลิงก์ย่อให้ระบบหลังบ้านอ่าน) */
+  function parseMapsUrl(u) {
+    let s = String(u || '');
+    try { s = decodeURIComponent(s.replace(/\+/g, ' ')); } catch (e) { /* ใช้ข้อความเดิม */ }
+    const out = { name: '', lat: null, lng: null };
+    const m = s.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/) ||
+      s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+      s.match(/[?&](?:q|query|ll|destination|daddr|center)=(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/) ||
+      s.match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/);
+    if (m) {
+      const lat = Number(m[1]), lng = Number(m[2]);
+      if (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) { out.lat = lat; out.lng = lng; }
+    }
+    const n = s.match(/\/place\/([^/@?&]+)/) || s.match(/[?&]q=([^&]+)/);
+    if (n && !/^\s*-?\d+(\.\d+)?\s*,/.test(n[1])) out.name = n[1].trim().slice(0, 120);
+    return out;
+  }
+
+  /* ---------- แผนที่ (Leaflet + OpenStreetMap) ---------- */
+  function decodePolyline(str) {
+    let index = 0, lat = 0, lng = 0;
+    const coords = [];
+    while (index < str.length) {
+      let b, shift = 0, result = 0;
+      do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lat += result & 1 ? ~(result >> 1) : result >> 1;
+      shift = 0; result = 0;
+      do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lng += result & 1 ? ~(result >> 1) : result >> 1;
+      coords.push([lat / 1e5, lng / 1e5]);
+    }
+    return coords;
+  }
+
+  function stopPopup(s) {
+    let h = `<b>${esc(s.seq ? s.seq + '. ' : '')}${esc(s.name)}</b>`;
+    if (s.planned_time) h += `<div class="muted small">นัด ${esc(s.planned_time)}</div>`;
+    if (s.status === 'arrived') h += `<div style="color:var(--good-ink);font-weight:600" class="small">เช็คอิน ${esc(fmtStamp(s.arrived_at))}</div>`;
+    if (s.photo_url) h += `<img src="${esc(s.photo_url)}" alt="รูปเช็คอิน" loading="lazy">`;
+    h += `<div style="margin-top:6px"><a href="${esc(placeUrl(s))}" target="_blank" rel="noopener">เปิดใน Google Maps</a></div>`;
+    return h;
+  }
+
+  function renderMap(el, stops, opts) {
+    opts = opts || {};
+    if (!el) return null;
+    if (el._map) { el._map.remove(); el._map = null; }
+    el.innerHTML = '';
+    if (!window.L) {
+      el.innerHTML = '<div class="map-note">โหลดแผนที่ไม่ได้ ตรวจสอบอินเทอร์เน็ต</div>';
+      return null;
+    }
+    const map = L.map(el, { scrollWheelZoom: false, zoomControl: true, tap: true });
+    el._map = map;
+    L.tileLayer(CONFIG.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: CONFIG.TILE_ATTRIBUTION || '&copy; OpenStreetMap'
+    }).addTo(map);
+    const list = (stops || []).filter(hasXY);
+    if (!list.length) {
+      map.setView([13.7563, 100.5018], 10);
+      const note = document.createElement('div');
+      note.className = 'map-note';
+      note.textContent = opts.emptyText || 'ยังไม่มีพิกัดสถานที่';
+      el.appendChild(note);
+      setTimeout(() => map.invalidateSize(), 60);
+      return map;
+    }
+    const brand = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#0E6BA8';
+    const bounds = L.latLngBounds([]);
+    if (opts.polyline) {
+      const pts = decodePolyline(opts.polyline);
+      L.polyline(pts, { color: brand, weight: 5, opacity: 0.85 }).addTo(map);
+      pts.forEach((p) => bounds.extend(p));
+    } else if (list.length > 1) {
+      L.polyline(list.map((s) => [s.lat, s.lng]), { color: brand, weight: 3, opacity: 0.9, dashArray: '8 8' }).addTo(map);
+    }
+    const next = list.find((s) => s.status !== 'arrived');
+    list.forEach((s, i) => {
+      const cls = s.status === 'arrived' ? 'done' : (opts.markNext && s === next ? 'next' : '');
+      const ic = L.divIcon({ className: '', html: `<div class="pin ${cls}">${esc(s.seq || i + 1)}</div>`, iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -14] });
+      L.marker([s.lat, s.lng], { icon: ic, title: s.name, zIndexOffset: s === next ? 500 : 0 }).addTo(map).bindPopup(stopPopup(s));
+      bounds.extend([s.lat, s.lng]);
+      if (opts.showCheckins && s.arrive_lat !== null && s.arrive_lat !== undefined && s.arrive_lng !== null) {
+        const cam = L.divIcon({ className: '', html: '<div class="pin-cam"></div>', iconSize: [14, 14], iconAnchor: [7, 7] });
+        L.marker([s.arrive_lat, s.arrive_lng], { icon: cam, title: 'จุดที่ถ่ายรูป' }).addTo(map)
+          .bindPopup(`<b>จุดที่ถ่ายรูปเช็คอิน</b><div class="small muted">${esc(s.name)} · ${esc(fmtStamp(s.arrived_at))}</div>`);
+        bounds.extend([s.arrive_lat, s.arrive_lng]);
+      }
+    });
+    if (list.length === 1 && !opts.polyline) map.setView([list[0].lat, list[0].lng], 15);
+    else map.fitBounds(bounds, { padding: [36, 36], maxZoom: 16 });
+    setTimeout(() => map.invalidateSize(), 60);
+    return map;
+  }
+
+  window.UI = {
+    CONFIG, $, $$, esc, today, addDays, bkkNow, fmtDate, fmtMin, relDay, hhmm, fmtStamp, minutesDiff,
+    STATUS, chip, jobTitle, nextStop, pct, progressBar, lastCheckin,
+    icon, brandMark, toast, busy, modal, confirmBox, showPhoto, copyText,
+    hasXY, navUrl, placeUrl, routeUrl, distanceM, fmtDist, parseMapsUrl, renderMap
+  };
+})();
+
+</script>
+<script>/* ---- assets/demo.js ---- */
+/* โหมดตัวอย่าง: จำลองระบบหลังบ้านในเบราว์เซอร์ (ข้อมูลเก็บในเครื่องนี้เท่านั้น) */
+(function () {
+  'use strict';
+  const KEY = 'stj_demo_db_v1';
+
+  const PLACES = [
+    { name: 'ลานจอดรถบริษัท (บางนา)', address: 'ซ.บางนา-ตราด 14 แขวงบางนา เขตบางนา กรุงเทพฯ', lat: 13.6694, lng: 100.6264 },
+    { name: 'หมู่บ้านพฤกษา 12 เทพารักษ์', address: 'ถ.เทพารักษ์ ต.บางพลีใหญ่ อ.บางพลี สมุทรปราการ', lat: 13.6260, lng: 100.6745 },
+    { name: 'เมกาบางนา', address: '39 หมู่ 6 ถ.บางนา-ตราด ต.บางแก้ว อ.บางพลี สมุทรปราการ', lat: 13.6467, lng: 100.6800 },
+    { name: 'เซ็นทรัล บางนา', address: '585 ถ.บางนา-ตราด แขวงบางนา เขตบางนา กรุงเทพฯ', lat: 13.6688, lng: 100.6350 },
+    { name: 'ไบเทค บางนา', address: '88 ถ.บางนา-ตราด แขวงบางนา เขตบางนา กรุงเทพฯ', lat: 13.6694, lng: 100.6097 },
+    { name: 'นิคมอุตสาหกรรมบางปู ประตู 2', address: 'ถ.สุขุมวิท ต.แพรกษา อ.เมืองสมุทรปราการ', lat: 13.5345, lng: 100.6560 },
+    { name: 'ท่าอากาศยานสุวรรณภูมิ', address: 'ต.หนองปรือ อ.บางพลี สมุทรปราการ', lat: 13.6900, lng: 100.7501 },
+    { name: 'ท่าอากาศยานดอนเมือง', address: 'ถ.วิภาวดีรังสิต แขวงสนามบิน เขตดอนเมือง กรุงเทพฯ', lat: 13.9126, lng: 100.6068 },
+    { name: 'โรงแรมชาเทรียม ริเวอร์ไซด์', address: '28 ซ.เจริญกรุง 70 เขตบางคอแหลม กรุงเทพฯ', lat: 13.7069, lng: 100.5116 },
+    { name: 'สยามพารากอน', address: '991 ถ.พระราม 1 แขวงปทุมวัน เขตปทุมวัน กรุงเทพฯ', lat: 13.7462, lng: 100.5347 },
+    { name: 'วัดไชยวัฒนาราม อยุธยา', address: 'ต.บ้านป้อม อ.พระนครศรีอยุธยา', lat: 14.3430, lng: 100.5416 },
+    { name: 'วัดมหาธาตุ อยุธยา', address: 'ถ.นเรศวร ต.ท่าวาสุกรี อ.พระนครศรีอยุธยา', lat: 14.3571, lng: 100.5676 },
+    { name: 'พระราชวังบางปะอิน', address: 'ต.บ้านเลน อ.บางปะอิน พระนครศรีอยุธยา', lat: 14.2326, lng: 100.5791 },
+    { name: 'โรงเรียนนานาชาติบางนา', address: 'ถ.บางนา-ตราด กม.10 อ.บางพลี สมุทรปราการ', lat: 13.6530, lng: 100.7020 },
+    { name: 'คอนโดลุมพินี บางนา', address: 'ถ.บางนา-ตราด กม.3 แขวงบางนา เขตบางนา กรุงเทพฯ', lat: 13.6672, lng: 100.6470 }
+  ];
+  const place = (name) => PLACES.find((p) => p.name.startsWith(name));
+
+  function photo(label, hue) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480">
+      <defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="hsl(${hue},45%,72%)"/><stop offset="1" stop-color="hsl(${hue},35%,88%)"/></linearGradient></defs>
+      <rect width="640" height="480" fill="url(#s)"/><rect y="330" width="640" height="150" fill="hsl(${hue},12%,42%)"/>
+      <rect x="40" y="150" width="170" height="190" fill="hsl(${hue},20%,96%)"/><rect x="430" y="110" width="170" height="230" fill="hsl(${hue},18%,90%)"/>
+      <g transform="translate(200 230)"><rect width="250" height="100" rx="18" fill="#F5F7FA"/><path d="M180 0h40l30 45v55h-70z" fill="#DDE4EC"/>
+      <rect x="20" y="18" width="40" height="32" rx="5" fill="#9FB4C8"/><rect x="72" y="18" width="40" height="32" rx="5" fill="#9FB4C8"/><rect x="124" y="18" width="40" height="32" rx="5" fill="#9FB4C8"/>
+      <circle cx="55" cy="102" r="20" fill="#2B2F36"/><circle cx="200" cy="102" r="20" fill="#2B2F36"/></g>
+      <rect y="420" width="640" height="60" fill="rgba(0,0,0,.55)"/>
+      <text x="20" y="458" font-family="sans-serif" font-size="24" fill="#fff">${label}</text></svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+
+  function seed() {
+    const t = UI.today();
+    const tm = UI.addDays(t, 1);
+    const db = { settings: { company_name: 'บริษัท ตัวอย่างทัวร์ จำกัด', admin_pin: '000000', admin_pin_default: 'true' },
+      drivers: [], jobs: [], stops: [], places: [], sessions: [] };
+    const drv = [['D1', 'สมชาย ใจดี', '111111'], ['D2', 'วิชัย ศรีสุข', '222222'], ['D3', 'ประเสริฐ มั่นคง', '333333'], ['D4', 'อนุชา แก้วมา', '444444']];
+    drv.forEach(([id, name, pin]) => db.drivers.push({ id, name, pin, active: 'true', created_at: t + ' 08:00:00' }));
+    let n = 0;
+    function job(no, date, time, title, driver, plate, note, stops) {
+      const id = 'J' + (++n);
+      const st = stops.map(([p, planned, arrived], i) => {
+        const pl = place(p);
+        const s = { id: id + 'S' + (i + 1), job_id: id, seq: i + 1, name: pl.name, address: pl.address, lat: pl.lat, lng: pl.lng,
+          map_url: `https://www.google.com/maps/search/?api=1&query=${pl.lat},${pl.lng}`, note: '', planned_time: planned,
+          status: arrived ? 'arrived' : 'pending', arrived_at: arrived ? date + ' ' + arrived + ':00' : '',
+          arrive_lat: arrived ? pl.lat + 0.0003 : null, arrive_lng: arrived ? pl.lng - 0.0002 : null,
+          photo_id: '', photo_url: arrived ? photo(`${pl.name} · ${arrived}`, 200 + i * 35) : '', checkin_note: '' };
+        db.stops.push(s);
+        return s;
+      });
+      const done = st.filter((s) => s.status === 'arrived').length;
+      const first = st.find((s) => s.arrived_at);
+      db.jobs.push({ id, job_no: 'JOB-' + date.slice(2).replace(/-/g, '') + '-' + String(no).padStart(2, '0'), date, time, title,
+        driver_id: driver, plate, note, status: done === 0 ? 'pending' : done === st.length ? 'done' : 'in_progress',
+        route_polyline: '', distance_km: null, duration_min: null, created_at: date + ' 05:00:00', updated_at: date + ' 05:00:00',
+        started_at: first ? first.arrived_at : '', finished_at: done === st.length && done ? st[st.length - 1].arrived_at : '' });
+    }
+    // เวลาอ้างอิงจากตอนนี้ เพื่อให้ข้อมูลตัวอย่างดูเหมือนกำลังทำงานจริง
+    const nowMin = (() => { const [h, m] = UI.bkkNow().time.split(':').map(Number); return h * 60 + m; })();
+    const T = (off) => { const v = Math.min(23 * 60 + 55, Math.max(5, nowMin + off)); return String(Math.floor(v / 60)).padStart(2, '0') + ':' + String(v % 60).padStart(2, '0'); };
+    job(1, t, T(-180), 'ส่งนักเรียน โรงเรียนนานาชาติ', 'D1', 'ฮข 4521', '', [['ลานจอดรถบริษัท', T(-180), T(-181)], ['คอนโดลุมพินี', T(-165), T(-162)], ['โรงเรียนนานาชาติ', T(-135), T(-138)]]);
+    job(2, t, T(-60), 'รับพนักงานกะเช้า', 'D1', 'ฮข 4521', 'โทรแจ้งพนักงานก่อนถึง 5 นาที', [['ลานจอดรถบริษัท', T(-60), T(-59)], ['หมู่บ้านพฤกษา', T(-40), T(-34)], ['เมกาบางนา', T(-10), ''], ['นิคมอุตสาหกรรมบางปู', T(25), '']]);
+    job(3, t, T(-90), 'ทัวร์อยุธยา 1 วัน', 'D2', 'นข 7788', 'ลูกค้า 9 ท่าน รับที่ล็อบบี้', [['โรงแรมชาเทรียม', T(-90), T(-88)], ['วัดไชยวัฒนาราม', T(30), ''], ['วัดมหาธาตุ', T(150), ''], ['พระราชวังบางปะอิน', T(330), '']]);
+    job(4, t, T(20), 'รับส่งสนามบิน', 'D3', '1กก 9032', 'เที่ยวบิน TG 103 รอที่ประตู 3', [['โรงแรมชาเทรียม', T(20), ''], ['ท่าอากาศยานสุวรรณภูมิ', T(80), '']]);
+    job(5, t, T(120), 'รับพนักงานกะบ่าย', 'D4', 'ศร 1150', '', [['เมกาบางนา', T(120), ''], ['หมู่บ้านพฤกษา', T(140), ''], ['นิคมอุตสาหกรรมบางปู', T(180), '']]);
+    job(1, tm, '07:30', 'งานสัมมนา ไบเทค', 'D1', 'ฮข 4521', '', [['สยามพารากอน', '07:30', ''], ['ไบเทค บางนา', '08:30', '']]);
+    PLACES.forEach((p, i) => db.places.push(Object.assign({ id: 'P' + i, map_url: `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}`, used_count: 1, last_used: '' }, p)));
+    return db;
+  }
+
+  function load() {
+    try {
+      const db = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (db && db.jobs) return db;
+    } catch (e) { /* สร้างใหม่ */ }
+    const db = seed();
+    save(db);
+    return db;
+  }
+  function save(db) {
+    try { localStorage.setItem(KEY, JSON.stringify(db)); }
+    catch (e) { fail('พื้นที่เก็บข้อมูลตัวอย่างเต็ม — กด "รีเซ็ตข้อมูลตัวอย่าง" ด้านบน'); }
+  }
+  function fail(msg, code) { const e = new Error(msg); e.app = true; e.code = code || ''; throw e; }
+  const uid = () => Math.random().toString(36).slice(2, 12);
+  const clean = (v, max) => String(v === null || v === undefined ? '' : v).trim().slice(0, max || 200);
+  const num = (v) => (v === '' || v === null || v === undefined || !isFinite(Number(v)) ? null : Number(v));
+  const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+
+  function auth(db, req, role) {
+    const s = db.sessions.find((x) => x.token === req.token);
+    if (!s) fail('หมดเวลาการใช้งาน กรุณาเข้าสู่ระบบใหม่', 'AUTH');
+    if (role && s.role !== role) fail('ไม่มีสิทธิ์ใช้งานส่วนนี้', 'FORBIDDEN');
+    return s;
+  }
+  function decorate(db, j) {
+    const stops = db.stops.filter((s) => s.job_id === j.id).sort((a, b) => a.seq - b.seq).map((s) => Object.assign({}, s));
+    const d = db.drivers.find((x) => x.id === j.driver_id);
+    return Object.assign({}, j, { driver_name: d ? d.name : '(ไม่พบคนขับ)', stops,
+      total_count: stops.length, done_count: stops.filter((s) => s.status === 'arrived').length });
+  }
+  const sortJobs = (a, b) => ((a.date + (a.time || '99:99') + a.job_no) < (b.date + (b.time || '99:99') + b.job_no) ? -1 : 1);
+
+  const A = {
+    ping: (db) => ({ app: 'Smart Tracking Jobs', version: 'demo', company: db.settings.company_name }),
+    publicDrivers: (db) => db.drivers.filter((d) => d.active === 'true').map((d) => ({ id: d.id, name: d.name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'th')),
+    login(db, req) {
+      if (!/^\d{6}$/.test(String(req.pin || ''))) fail('PIN ต้องเป็นตัวเลข 6 หลัก');
+      let user, role = req.role;
+      if (role === 'admin') {
+        if (req.pin !== db.settings.admin_pin) fail('PIN ไม่ถูกต้อง', 'BAD_PIN');
+        user = { id: 'admin', name: 'แอดมิน' };
+      } else {
+        const d = db.drivers.find((x) => x.id === req.driverId && x.active === 'true');
+        if (!d) fail('ไม่พบชื่อคนขับนี้ หรือถูกปิดการใช้งานแล้ว');
+        if (req.pin !== d.pin) fail('PIN ไม่ถูกต้อง', 'BAD_PIN');
+        user = { id: d.id, name: d.name };
+      }
+      const token = uid() + uid();
+      db.sessions.push({ token, role, user_id: user.id, name: user.name });
+      const out = { token, role, user, company: db.settings.company_name };
+      if (role === 'admin') out.pinDefault = db.settings.admin_pin_default === 'true';
+      return out;
+    },
+    logout(db, req) { db.sessions = db.sessions.filter((s) => s.token !== req.token); return true; },
+    me(db, req) {
+      const s = auth(db, req);
+      return { role: s.role, user: { id: s.user_id, name: s.name }, company: db.settings.company_name,
+        pinDefault: s.role === 'admin' ? db.settings.admin_pin_default === 'true' : undefined };
+    },
+    changeAdminPin(db, req) {
+      auth(db, req, 'admin');
+      if (req.oldPin !== db.settings.admin_pin) fail('PIN เดิมไม่ถูกต้อง');
+      if (!/^\d{6}$/.test(String(req.newPin || ''))) fail('PIN ใหม่ต้องเป็นตัวเลข 6 หลัก');
+      if (req.newPin === '000000') fail('ห้ามใช้ 000000 เป็น PIN ใหม่');
+      db.settings.admin_pin = req.newPin;
+      db.settings.admin_pin_default = 'false';
+      return true;
+    },
+    saveSettings(db, req) {
+      auth(db, req, 'admin');
+      const name = clean(req.company_name, 80);
+      if (!name) fail('กรุณาใส่ชื่อบริษัท');
+      db.settings.company_name = name;
+      return { company: name };
+    },
+    listDrivers(db, req) {
+      auth(db, req, 'admin');
+      return db.drivers.map((d) => ({ id: d.id, name: d.name, active: d.active === 'true', created_at: d.created_at }))
+        .sort((a, b) => (a.active !== b.active ? (a.active ? -1 : 1) : a.name.localeCompare(b.name, 'th')));
+    },
+    saveDriver(db, req) {
+      auth(db, req, 'admin');
+      const d = req.driver || {};
+      const name = clean(d.name, 60).replace(/\s+/g, ' ');
+      const pin = d.pin ? String(d.pin) : '';
+      const active = !(d.active === false || d.active === 'false');
+      if (!name) fail('กรุณาใส่ชื่อคนขับ');
+      if (pin && !/^\d{6}$/.test(pin)) fail('PIN ต้องเป็นตัวเลข 6 หลัก');
+      if (active && db.drivers.some((x) => x.active === 'true' && x.id !== d.id && x.name.toLowerCase() === name.toLowerCase())) fail(`มีคนขับชื่อ "${name}" อยู่แล้ว`);
+      if (d.id) {
+        const cur = db.drivers.find((x) => x.id === d.id);
+        if (!cur) fail('ไม่พบคนขับ');
+        cur.name = name; cur.active = active ? 'true' : 'false';
+        if (pin) cur.pin = pin;
+        if (pin || !active) db.sessions = db.sessions.filter((s) => !(s.role === 'driver' && s.user_id === cur.id));
+        return { id: cur.id, name, active };
+      }
+      if (!pin) fail('กรุณาตั้ง PIN 6 หลักให้คนขับ');
+      const id = 'D' + uid();
+      db.drivers.push({ id, name, pin, active: 'true', created_at: UI.bkkNow().stamp });
+      return { id, name, active: true };
+    },
+    listJobs(db, req) {
+      const s = auth(db, req);
+      const t = UI.today();
+      if (s.role === 'driver') {
+        const from = UI.addDays(t, -1), to = UI.addDays(t, 30);
+        return db.jobs.filter((j) => j.driver_id === s.user_id && j.status !== 'cancelled' &&
+          ((j.date >= from && j.date <= to) || (j.date < t && j.status !== 'done'))).map((j) => decorate(db, j)).sort(sortJobs);
+      }
+      let f = String(req.from || t), to = String(req.to || f);
+      if (!isDate(f) || !isDate(to)) fail('วันที่ไม่ถูกต้อง');
+      if (to < f) [f, to] = [to, f];
+      return db.jobs.filter((j) => j.date >= f && j.date <= to).map((j) => decorate(db, j)).sort(sortJobs);
+    },
+    getJob(db, req) {
+      const s = auth(db, req);
+      const j = db.jobs.find((x) => x.id === req.id);
+      if (!j) fail('ไม่พบ Job นี้');
+      if (s.role === 'driver' && j.driver_id !== s.user_id) fail('Job นี้ไม่ใช่งานของคุณ', 'FORBIDDEN');
+      return decorate(db, j);
+    },
+    saveJob(db, req) {
+      auth(db, req, 'admin');
+      const inp = req.job || {}, stopsIn = req.stops || [];
+      if (!isDate(inp.date)) fail('กรุณาเลือกวันที่');
+      if (!inp.driver_id) fail('กรุณาเลือกคนขับ');
+      const plate = clean(inp.plate, 20);
+      if (!plate) fail('กรุณาใส่ทะเบียนรถ');
+      if (!stopsIn.length) fail('กรุณาเพิ่มสถานที่อย่างน้อย 1 จุด');
+      if (stopsIn.length > 25) fail('เพิ่มสถานที่ได้สูงสุด 25 จุดต่อ Job');
+      const drv = db.drivers.find((d) => d.id === inp.driver_id);
+      if (!drv) fail('ไม่พบคนขับที่เลือก');
+      let job = inp.id ? db.jobs.find((j) => j.id === inp.id) : null;
+      if (inp.id && !job) fail('ไม่พบ Job นี้');
+      if (job && job.status === 'cancelled') fail('Job นี้ถูกยกเลิกแล้ว แก้ไขไม่ได้');
+      if (drv.active !== 'true' && !(job && job.driver_id === drv.id)) fail('คนขับคนนี้ถูกปิดการใช้งาน');
+      const old = job ? db.stops.filter((s) => s.job_id === job.id) : [];
+      const keep = new Set(stopsIn.map((s) => s.id).filter(Boolean));
+      old.forEach((o) => { if (o.status === 'arrived' && !keep.has(o.id)) fail(`ลบ "${o.name}" ไม่ได้ เพราะคนขับเช็คอินแล้ว`); });
+      if (job && job.driver_id !== drv.id && job.status !== 'pending') fail('เปลี่ยนคนขับไม่ได้ เพราะเริ่มงานไปแล้ว');
+      const id = job ? job.id : 'J' + uid();
+      let jobNo = job && job.job_no;
+      if (!jobNo) {
+        const prefix = 'JOB-' + inp.date.slice(2).replace(/-/g, '') + '-';
+        const max = db.jobs.filter((j) => j.job_no.startsWith(prefix)).reduce((m, j) => Math.max(m, Number(j.job_no.slice(prefix.length)) || 0), 0);
+        jobNo = prefix + String(max + 1).padStart(2, '0');
+      }
+      const now = UI.bkkNow().stamp;
+      db.stops = db.stops.filter((s) => s.job_id !== id);
+      let arrived = 0;
+      stopsIn.forEach((s, i) => {
+        const name = clean(s.name, 120);
+        if (!name) fail(`สถานที่จุดที่ ${i + 1} ยังไม่มีชื่อ`);
+        const o = old.find((x) => x.id === s.id);
+        if (o && o.status === 'arrived') arrived++;
+        db.stops.push(Object.assign({}, o || {}, {
+          id: o ? o.id : 'S' + uid(), job_id: id, seq: i + 1, name, address: clean(s.address, 250),
+          lat: num(s.lat), lng: num(s.lng), map_url: clean(s.map_url, 1500), note: clean(s.note, 300),
+          planned_time: /^\d{2}:\d{2}$/.test(s.planned_time || '') ? s.planned_time : '',
+          status: o ? o.status : 'pending'
+        }, o ? {} : { arrived_at: '', arrive_lat: null, arrive_lng: null, photo_id: '', photo_url: '', checkin_note: '' }));
+      });
+      const status = arrived === 0 ? 'pending' : arrived === stopsIn.length ? 'done' : 'in_progress';
+      const rec = { id, job_no: jobNo, date: inp.date, time: /^\d{2}:\d{2}$/.test(inp.time || '') ? inp.time : '', title: clean(inp.title, 120),
+        driver_id: drv.id, plate, note: clean(inp.note, 500), status, route_polyline: '', distance_km: null, duration_min: null,
+        created_at: job ? job.created_at : now, updated_at: now, started_at: job ? job.started_at : '',
+        finished_at: status === 'done' ? (job && job.finished_at) || now : '' };
+      if (job) Object.assign(job, rec); else db.jobs.push(rec);
+      stopsIn.forEach((s) => {
+        const hit = db.places.find((p) => p.name === clean(s.name, 120));
+        if (hit) { hit.used_count = (hit.used_count || 0) + 1; hit.last_used = now; }
+        else db.places.push({ id: 'P' + uid(), name: clean(s.name, 120), address: clean(s.address, 250), lat: num(s.lat), lng: num(s.lng), map_url: clean(s.map_url, 1500), used_count: 1, last_used: now });
+      });
+      return decorate(db, db.jobs.find((j) => j.id === id));
+    },
+    cancelJob(db, req) {
+      auth(db, req, 'admin');
+      const j = db.jobs.find((x) => x.id === req.id);
+      if (!j) fail('ไม่พบ Job นี้');
+      if (j.status === 'done') fail('Job นี้เสร็จแล้ว ยกเลิกไม่ได้');
+      j.status = 'cancelled';
+      return decorate(db, j);
+    },
+    deleteJob(db, req) {
+      auth(db, req, 'admin');
+      const j = db.jobs.find((x) => x.id === req.id);
+      if (!j) fail('ไม่พบ Job นี้');
+      if (db.stops.some((s) => s.job_id === j.id && s.status === 'arrived')) fail('มีการเช็คอินแล้ว ลบไม่ได้ — ใช้ "ยกเลิก Job" แทน');
+      db.stops = db.stops.filter((s) => s.job_id !== j.id);
+      db.jobs = db.jobs.filter((x) => x.id !== j.id);
+      return true;
+    },
+    checkIn(db, req) {
+      const s = auth(db, req, 'driver');
+      if (!/^data:image\//.test(String(req.photo || ''))) fail('กรุณาถ่ายรูปเช็คอิน');
+      const st = db.stops.find((x) => x.id === req.stopId);
+      if (!st) fail('ไม่พบสถานที่นี้ใน Job');
+      const j = db.jobs.find((x) => x.id === st.job_id);
+      if (!j || j.driver_id !== s.user_id) fail('สถานที่นี้ไม่ใช่งานของคุณ', 'FORBIDDEN');
+      if (j.status === 'cancelled') fail('Job นี้ถูกยกเลิกแล้ว');
+      if (st.status === 'arrived') fail('จุดนี้เช็คอินไปแล้ว');
+      const now = UI.bkkNow().stamp;
+      Object.assign(st, { status: 'arrived', arrived_at: now, arrive_lat: num(req.lat), arrive_lng: num(req.lng),
+        photo_id: 'demo', photo_url: req.photo, checkin_note: clean(req.note, 300) });
+      const all = db.stops.filter((x) => x.job_id === j.id);
+      const done = all.filter((x) => x.status === 'arrived').length;
+      if (!j.started_at) j.started_at = now;
+      j.status = done >= all.length ? 'done' : 'in_progress';
+      if (j.status === 'done') j.finished_at = now;
+      j.updated_at = now;
+      return decorate(db, j);
+    },
+    searchPlace(db, req) {
+      auth(db, req, 'admin');
+      const q = clean(req.q, 150);
+      if (q.length < 2) fail('พิมพ์คำค้นหาอย่างน้อย 2 ตัวอักษร');
+      const co = UI.parseMapsUrl(q);
+      if (co.lat !== null) return [{ name: 'พิกัด ' + q, address: '', lat: co.lat, lng: co.lng, map_url: `https://www.google.com/maps/search/?api=1&query=${co.lat},${co.lng}` }];
+      const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+      return PLACES.filter((p) => words.every((w) => (p.name + ' ' + p.address).toLowerCase().includes(w))).slice(0, 6)
+        .map((p) => ({ name: p.name, address: p.address, lat: p.lat, lng: p.lng, map_url: `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}` }));
+    },
+    resolveLink(db, req) {
+      auth(db, req, 'admin');
+      const m = String(req.url || '').match(/https:\/\/\S+/) || [String(req.url || '').trim()];
+      const info = UI.parseMapsUrl(m[0]);
+      if (info.lat === null && /goo\.gl|g\.co/.test(m[0])) {
+        fail('โหมดตัวอย่างอ่านลิงก์แบบย่อ (maps.app.goo.gl) ไม่ได้ — ระบบจริงอ่านได้ ลองลิงก์แบบเต็มหรือพิกัด เช่น 13.7462, 100.5347');
+      }
+      if (info.lat === null && !/^https:\/\//.test(m[0])) fail('กรุณาวางลิงก์จาก Google Maps (ขึ้นต้นด้วย https://)');
+      return { name: info.name, lat: info.lat, lng: info.lng, map_url: /^https:/.test(m[0]) ? m[0] : `https://www.google.com/maps/search/?api=1&query=${info.lat},${info.lng}` };
+    },
+    listPlaces(db, req) {
+      auth(db, req, 'admin');
+      return db.places.slice().sort((a, b) => (b.used_count || 0) - (a.used_count || 0));
+    }
+  };
+
+  window.DemoBackend = {
+    reset() { localStorage.removeItem(KEY); },
+    async handle(req) {
+      await new Promise((r) => setTimeout(r, req.action === 'checkIn' ? 700 : 180));
+      const db = load();
+      try {
+        const fn = A[req.action];
+        if (!fn) fail('ไม่รู้จักคำสั่ง: ' + req.action);
+        const data = fn(db, req);
+        save(db);
+        return { ok: true, data: JSON.parse(JSON.stringify(data === undefined ? null : data)) };
+      } catch (e) {
+        if (e.app) return { ok: false, error: e.message, code: e.code };
+        console.error(e);
+        return { ok: false, error: 'เกิดข้อผิดพลาด: ' + e.message };
+      }
+    }
+  };
+})();
+
+</script>
+<script>/* ---- assets/api.js ---- */
+/* เชื่อมต่อระบบหลังบ้าน (Google Apps Script) หรือโหมดตัวอย่าง */
+(function () {
+  'use strict';
+  const CONFIG = window.STJ_CONFIG || {};
+  const K = { api: 'stj_api_url', demo: 'stj_demo_mode', sess: 'stj_session' };
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* โหมดส่วนตัว */ } },
+    del(k) { try { localStorage.removeItem(k); } catch (e) { /* โหมดส่วนตัว */ } }
+  };
+
+  // รับลิงก์ระบบจาก ?api=... (ลิงก์ที่แอดมินส่งให้คนขับ) หรือ ?demo=1
+  (function readParams() {
+    const p = new URLSearchParams(location.search);
+    let changed = false;
+    if (p.get('api')) { store.set(K.api, p.get('api').trim()); store.del(K.demo); p.delete('api'); changed = true; }
+    if (p.get('demo') === '1') { store.set(K.demo, '1'); p.delete('demo'); changed = true; }
+    if (changed) {
+      const q = p.toString();
+      history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    }
+  })();
+
+  const isDemo = () => store.get(K.demo) === '1';
+  const apiUrl = () => (CONFIG.API_URL || store.get(K.api) || '').trim();
+  const scope = () => (isDemo() ? 'demo' : apiUrl());
+
+  function session() {
+    try {
+      const s = JSON.parse(store.get(K.sess) || 'null');
+      return s && s.scope === scope() ? s : null;
+    } catch (e) { return null; }
+  }
+  function setSession(data) {
+    store.set(K.sess, JSON.stringify(Object.assign({}, data, { scope: scope() })));
+  }
+  function patchSession(patch) {
+    const s = session();
+    if (s) setSession(Object.assign(s, patch));
+  }
+  const clearSession = () => store.del(K.sess);
+
+  class ApiError extends Error {
+    constructor(msg, code) { super(msg); this.code = code || ''; }
+  }
+
+  async function call(action, payload) {
+    const s = session();
+    const body = Object.assign({ action }, payload || {}, s ? { token: s.token } : {});
+    let res;
+    if (isDemo()) {
+      res = await window.DemoBackend.handle(body);
+    } else {
+      const url = apiUrl();
+      if (!url) throw new ApiError('ยังไม่ได้เชื่อมต่อระบบหลังบ้าน', 'SETUP');
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), action === 'checkIn' ? 120000 : 45000);
+      try {
+        const r = await fetch(url, {
+          method: 'POST', redirect: 'follow', signal: ctrl.signal,
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(body)
+        });
+        const text = await r.text();
+        try { res = JSON.parse(text); } catch (e) {
+          throw new ApiError('ระบบหลังบ้านตอบกลับไม่ถูกต้อง — ตรวจสอบว่าตั้งสิทธิ์เว็บแอปเป็น "ทุกคน"', 'BAD_RESPONSE');
+        }
+      } catch (e) {
+        if (e instanceof ApiError) throw e;
+        if (e.name === 'AbortError') throw new ApiError('ใช้เวลานานเกินไป ลองใหม่อีกครั้ง', 'TIMEOUT');
+        throw new ApiError('เชื่อมต่อไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่', 'NETWORK');
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    if (!res || !res.ok) {
+      const err = new ApiError((res && res.error) || 'เกิดข้อผิดพลาด', res && res.code);
+      if (err.code === 'AUTH' && action !== 'login') {
+        clearSession();
+        setTimeout(() => { location.hash = '#/login'; }, 0);
+      }
+      throw err;
+    }
+    return res.data;
+  }
+
+  async function testUrl(url) {
+    if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/i.test(url) && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(url)) {
+      throw new ApiError('ลิงก์ต้องขึ้นต้นด้วย https://script.google.com/macros/s/… และลงท้ายด้วย /exec');
+    }
+    let r;
+    try {
+      r = await fetch(url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'ping' }) });
+    } catch (e) {
+      throw new ApiError('เชื่อมต่อไม่ได้ — ตรวจสอบว่าตั้ง "ผู้ที่มีสิทธิ์เข้าถึง: ทุกคน" แล้ว');
+    }
+    let j;
+    try { j = JSON.parse(await r.text()); } catch (e) {
+      throw new ApiError('ลิงก์นี้ไม่ใช่ระบบ Smart Tracking หรือยังไม่ได้ตั้งสิทธิ์เป็น "ทุกคน"');
+    }
+    if (!j.ok) throw new ApiError(j.error || 'ระบบหลังบ้านมีปัญหา');
+    return j.data;
+  }
+
+  window.API = {
+    call, testUrl, isDemo, apiUrl, session, setSession, patchSession, clearSession, ApiError,
+    ready: () => isDemo() || !!apiUrl(),
+    lockedUrl: () => !!CONFIG.API_URL,
+    setApiUrl(url) { store.set(K.api, url.trim()); store.del(K.demo); clearSession(); },
+    enableDemo() { store.set(K.demo, '1'); clearSession(); },
+    disableDemo() { store.del(K.demo); clearSession(); },
+    driverLink() {
+      const base = location.origin + location.pathname;
+      return isDemo() ? base + '?demo=1#/login' : base + (CONFIG.API_URL ? '' : '?api=' + encodeURIComponent(apiUrl())) + '#/login';
+    }
+  };
+})();
+
+</script>
+<script>/* ---- assets/admin.js ---- */
+/* หน้าจอฝั่งเจ้าของ / แอดมิน */
+(function () {
+  'use strict';
+  const { $, $$, esc, icon, chip, toast, busy } = UI;
+  const V = (window.Views = window.Views || {});
+
+  /* ---------- โครงหน้า ---------- */
+  function shell(active, inner) {
+    const s = API.session() || {};
+    const items = [['#/admin', 'ภาพรวม', 'home', 'home'], ['#/admin/jobs', 'Job', 'list', 'jobs'],
+      ['#/admin/drivers', 'คนขับ', 'users', 'drivers'], ['#/admin/settings', 'ตั้งค่า', 'settings', 'settings']];
+    return `${App.demoBar()}
+    <header class="topbar"><div class="topbar-in">
+      <a class="brand" href="#/admin">${UI.brandMark()}<span class="brand-text"><b>Smart Tracking</b><span>${esc(s.company || '')}</span></span></a>
+      <nav class="nav" aria-label="เมนูหลัก">${items.map(([h, t, ic, key]) =>
+        `<a href="${h}" class="${key === active ? 'on' : ''}" ${key === active ? 'aria-current="page"' : ''}>${icon(ic, 18)}${t}</a>`).join('')}</nav>
+      <div class="top-user"><span class="avatar" aria-hidden="true">A</span>
+        <span class="who" style="display:flex;flex-direction:column;line-height:1.2"><b style="font-size:14px">แอดมิน</b><span style="font-size:12px;color:#A9B8C8">เจ้าของ</span></span>
+        <button type="button" class="icon-btn" data-logout aria-label="ออกจากระบบ" title="ออกจากระบบ">${icon('logout')}</button></div>
+    </div></header>
+    <main class="page">${inner}</main>`;
+  }
+  function mount(active, inner) {
+    $('#app').innerHTML = shell(active, inner);
+    App.bindCommon();
+  }
+  const loading = (t) => `<div class="loading-block"><span class="spinner"></span>${esc(t || 'กำลังโหลด…')}</div>`;
+  const errorBox = (e) => `<div class="banner bad">${esc(e.message || e)}</div>`;
+  function pinBanner() {
+    const s = API.session();
+    return s && s.pinDefault ? `<div class="banner warn">${icon('lock', 18)}<span>ยังใช้ PIN แอดมินเริ่มต้น <b>000000</b> — เพื่อความปลอดภัยควรเปลี่ยนทันที</span><a href="#/admin/settings">เปลี่ยน PIN</a></div>` : '';
+  }
+  function isOverdue(job, stop) {
+    if (stop.status === 'arrived' || job.status === 'cancelled') return false;
+    const now = UI.bkkNow();
+    if (job.date < now.date) return true;
+    return job.date === now.date && stop.planned_time && stop.planned_time < now.time;
+  }
+  function overdueMin(job, stop) {
+    if (!isOverdue(job, stop) || job.date !== UI.today() || !stop.planned_time) return null;
+    const [h, m] = stop.planned_time.split(':').map(Number);
+    const [nh, nm] = UI.bkkNow().time.split(':').map(Number);
+    return nh * 60 + nm - (h * 60 + m);
+  }
+  const dotColor = (st) => ({ pending: '#8A96A3', in_progress: 'var(--brand)', done: 'var(--good)', cancelled: 'var(--bad)' }[st]);
+
+  /* ====================== ภาพรวม ====================== */
+  V.dashboard = async function () {
+    const st = { date: App.state.dashDate || UI.today(), jobs: [], sel: App.state.dashSel || null, at: '' };
+    mount('home', `
+      ${pinBanner()}
+      <div class="page-head">
+        <div><h1>ภาพรวม</h1><div class="sub" id="d-sub">${esc(UI.fmtDate(st.date))}</div></div>
+        <div class="actions">
+          <label class="sr-only" for="d-date">เลือกวันที่</label>
+          <input type="date" id="d-date" class="input" style="width:auto" value="${esc(st.date)}">
+          <button type="button" class="btn" id="d-refresh">${icon('refresh', 18)}รีเฟรช</button>
+          <a href="#/admin/jobs/new" class="btn btn-primary">${icon('plus', 18)}สร้าง Job</a>
+        </div>
+      </div>
+      <div class="tiles" id="d-tiles">${loading()}</div>
+      <div class="split stretch">
+        <section class="main card map-card" aria-label="แผนที่เส้นทาง">
+          <div class="card-head"><h2 id="d-maptitle">เส้นทาง</h2>
+            <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:var(--brand)"></i>จุดถัดไป</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่ถ่ายรูป</span></div>
+          </div>
+          <div class="map" id="d-map"></div>
+        </section>
+        <aside class="side" aria-label="รายละเอียด Job" id="d-side">${loading()}</aside>
+      </div>
+      <section class="card" aria-label="Job ของวัน">
+        <div class="card-head"><h2>Job ของวัน</h2><span class="muted small" id="d-at"></span></div>
+        <div id="d-table">${loading()}</div>
+      </section>`);
+
+    async function load(silent) {
+      if (!silent) $('#d-refresh').disabled = true;
+      try {
+        st.jobs = await API.call('listJobs', { from: st.date, to: st.date });
+        st.at = UI.bkkNow().time;
+        if (!st.jobs.some((j) => j.id === st.sel)) {
+          const pick = st.jobs.find((j) => j.status === 'in_progress') || st.jobs.find((j) => j.status === 'pending') || st.jobs[0];
+          st.sel = pick ? pick.id : null;
+        }
+        draw();
+      } catch (e) {
+        if (!silent) { $('#d-table').innerHTML = errorBox(e); $('#d-side').innerHTML = ''; $('#d-tiles').innerHTML = ''; }
+      } finally {
+        const b = $('#d-refresh'); if (b) b.disabled = false;
+      }
+    }
+
+    function draw() {
+      const live = st.jobs.filter((j) => j.status !== 'cancelled');
+      const overdue = live.reduce((n, j) => n + j.stops.filter((s) => isOverdue(j, s)).length, 0);
+      $('#d-tiles').innerHTML = `
+        <div class="tile"><span class="k">Job ทั้งหมด</span><span class="v">${live.length}</span></div>
+        <div class="tile blue"><span class="k">กำลังทำ</span><span class="v">${live.filter((j) => j.status === 'in_progress').length}</span></div>
+        <div class="tile green"><span class="k">เสร็จแล้ว</span><span class="v">${live.filter((j) => j.status === 'done').length}</span></div>
+        <div class="tile ${overdue ? 'orange' : ''}"><span class="k">จุดที่เลยเวลานัด</span><span class="v">${overdue}</span></div>`;
+      $('#d-at').textContent = `อัปเดตล่าสุด ${st.at} น. · กดรีเฟรชเพื่อดูข้อมูลใหม่`;
+      $('#d-sub').textContent = UI.fmtDate(st.date) + (st.date === UI.today() ? ' (วันนี้)' : '');
+      drawSide();
+      drawMap();
+      drawTable();
+    }
+
+    function drawMap() {
+      const job = st.jobs.find((j) => j.id === st.sel);
+      $('#d-maptitle').innerHTML = job ? `เส้นทาง · <span class="mono">${esc(job.job_no)}</span>` : 'เส้นทาง';
+      UI.renderMap($('#d-map'), job ? job.stops : [], {
+        polyline: job && job.route_polyline, showCheckins: true, markNext: true,
+        emptyText: job ? 'Job นี้ยังไม่มีพิกัดสถานที่' : 'ไม่มี Job ในวันที่เลือก'
+      });
+    }
+
+    function drawSide() {
+      const job = st.jobs.find((j) => j.id === st.sel);
+      let html = '';
+      if (job) {
+        const nx = UI.nextStop(job);
+        const last = UI.lastCheckin(job);
+        const late = nx ? overdueMin(job, nx) : null;
+        html += `<div class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="mono" style="font-size:16px">${esc(job.job_no)}</span>${chip(job.status)}</div>
+          <div style="font-size:18px;font-weight:700;line-height:1.35">${esc(UI.jobTitle(job))}</div>
+          <div class="kv">
+            <div><span class="k">คนขับ</span><span class="v">${esc(job.driver_name)}</span></div>
+            <div><span class="k">ทะเบียนรถ</span><span class="v mono">${esc(job.plate)}</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">ความคืบหน้า</span><b>${job.done_count}/${job.total_count} จุด</b></div>
+            ${UI.progressBar(job)}
+          </div>
+          <div class="kv">
+            <div><span class="k">จุดถัดไป</span><span class="v">${nx ? esc(nx.name) : '— ครบทุกจุด'}</span></div>
+            <div><span class="k">เวลานัด</span><span class="v">${nx && nx.planned_time ? esc(nx.planned_time) + ' น.' : '-'}</span></div>
+          </div>
+          ${late !== null && late > 0 ? `<div class="banner warn">${icon('clock', 18)}เลยเวลานัด ${UI.fmtMin(late)} ยังไม่เช็คอิน</div>` : ''}
+          ${last ? `<div style="display:flex;gap:12px;align-items:center">
+              ${last.photo_url ? `<button type="button" class="tl-photo-btn" data-photo="${esc(last.photo_url)}" data-cap="${esc(last.name)}" style="padding:0;border:0;background:none;cursor:zoom-in;border-radius:10px;overflow:hidden;flex:none"><img src="${esc(last.photo_url)}" alt="รูปเช็คอินล่าสุด" style="width:88px;height:66px;object-fit:cover;background:#E8EDF1"></button>` : ''}
+              <div class="info-row"><span class="k">เช็คอินล่าสุด</span><span class="v">${esc(UI.hhmm(last.arrived_at))} น. · ${esc(last.name)}</span></div></div>` : ''}
+          <div class="actions">
+            <a class="btn btn-primary" href="#/admin/jobs/${esc(job.id)}">ดูรายละเอียด</a>
+            <a class="btn" href="${esc(UI.routeUrl(job.stops))}" target="_blank" rel="noopener">${icon('nav', 18)}Google Maps</a>
+          </div>
+        </div>`;
+      }
+      html += `<div class="card"><div class="card-head"><h2>Job ทั้งหมดของวัน</h2><span class="muted small">${st.jobs.length} งาน</span></div>`;
+      if (!st.jobs.length) {
+        html += `<div class="empty">${icon('route', 36)}<div>ยังไม่มี Job ในวันนี้</div><a class="btn btn-primary btn-sm" href="#/admin/jobs/new">${icon('plus', 16)}สร้าง Job</a></div>`;
+      } else {
+        html += '<div class="job-list">' + st.jobs.map((j) => `
+          <button type="button" class="job-row ${j.id === st.sel ? 'on' : ''}" data-sel="${esc(j.id)}" aria-pressed="${j.id === st.sel}">
+            <i class="dot" style="background:${dotColor(j.status)}"></i>
+            <span class="grow"><span class="t"><span class="mono" style="font-size:14px">${esc(j.plate)}</span> · ${esc(UI.jobTitle(j))}</span>
+            <span class="s">${esc(j.driver_name)}${j.time ? ' · ' + esc(j.time) + ' น.' : ''}</span></span>
+            <span class="muted small" style="flex:none">${j.status === 'cancelled' ? 'ยกเลิก' : j.done_count + '/' + j.total_count}</span>
+          </button>`).join('') + '</div>';
+      }
+      html += '</div>';
+      $('#d-side').innerHTML = html;
+      $$('[data-sel]', $('#d-side')).forEach((b) => b.addEventListener('click', () => {
+        st.sel = b.dataset.sel; App.state.dashSel = st.sel; drawSide(); drawMap();
+      }));
+      $$('[data-photo]', $('#d-side')).forEach((b) => b.addEventListener('click', () => UI.showPhoto(b.dataset.photo, b.dataset.cap)));
+    }
+
+    function drawTable() {
+      if (!st.jobs.length) { $('#d-table').innerHTML = `<div class="empty">ไม่มี Job ในวันที่เลือก</div>`; return; }
+      $('#d-table').innerHTML = jobTable(st.jobs);
+      bindJobTable($('#d-table'));
+    }
+
+    $('#d-date').addEventListener('change', (e) => {
+      if (!e.target.value) return;
+      st.date = e.target.value; App.state.dashDate = st.date; st.sel = null;
+      load();
+    });
+    $('#d-refresh').addEventListener('click', () => load());
+    const timer = setInterval(() => { if (document.visibilityState === 'visible' && st.date === UI.today()) load(true); }, 120000);
+    App.onLeave(() => clearInterval(timer));
+    load();
+  };
+
+  function jobTable(jobs) {
+    return `<div class="table-wrap"><table class="tbl"><thead><tr>
+      <th>เลข Job</th><th>วันที่</th><th>ชื่องาน / เส้นทาง</th><th>คนขับ</th><th>ทะเบียน</th><th>เวลาเริ่ม</th><th>ความคืบหน้า</th><th>สถานะ</th>
+      </tr></thead><tbody>${jobs.map((j) => `
+      <tr class="click" data-go="#/admin/jobs/${esc(j.id)}" tabindex="0">
+        <td class="mono small">${esc(j.job_no)}</td>
+        <td style="white-space:nowrap">${esc(UI.fmtDate(j.date, { short: true }))}</td>
+        <td>${esc(UI.jobTitle(j))}<div class="muted small">${j.total_count} จุด</div></td>
+        <td>${esc(j.driver_name)}</td>
+        <td class="mono small" style="white-space:nowrap">${esc(j.plate)}</td>
+        <td>${esc(j.time || '-')}</td>
+        <td style="min-width:120px"><div class="small" style="margin-bottom:4px">${j.done_count}/${j.total_count} จุด</div>${UI.progressBar(j)}</td>
+        <td>${chip(j.status)}</td>
+      </tr>`).join('')}</tbody></table></div>`;
+  }
+  function bindJobTable(root) {
+    $$('tr[data-go]', root).forEach((tr) => {
+      tr.addEventListener('click', () => { location.hash = tr.dataset.go; });
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') location.hash = tr.dataset.go; });
+    });
+  }
+
+  /* ====================== รายการ Job ====================== */
+  V.jobs = async function () {
+    const t = UI.today();
+    const f = App.state.jobsFilter || (App.state.jobsFilter = { from: UI.addDays(t, -7), to: UI.addDays(t, 14), status: '', q: '' });
+    let jobs = [];
+    mount('jobs', `
+      <div class="page-head">
+        <div><h1>Job</h1><div class="sub">สร้าง แก้ไข และดูประวัติการเช็คอิน</div></div>
+        <div class="actions"><a href="#/admin/jobs/new" class="btn btn-primary">${icon('plus', 18)}สร้าง Job</a></div>
+      </div>
+      <div class="card card-pad">
+        <div class="grid g4">
+          <label class="field"><span>ตั้งแต่วันที่</span><input type="date" class="input" id="f-from" value="${esc(f.from)}"></label>
+          <label class="field"><span>ถึงวันที่</span><input type="date" class="input" id="f-to" value="${esc(f.to)}"></label>
+          <label class="field"><span>สถานะ</span><select class="input" id="f-status">
+            <option value="">ทั้งหมด</option>${['pending', 'in_progress', 'done', 'cancelled'].map((s) => `<option value="${s}" ${f.status === s ? 'selected' : ''}>${UI.STATUS[s]}</option>`).join('')}
+          </select></label>
+          <label class="field"><span>ค้นหา</span><input type="search" class="input" id="f-q" value="${esc(f.q)}" placeholder="เลข Job, ทะเบียน, คนขับ, สถานที่"></label>
+        </div>
+      </div>
+      <section class="card"><div class="card-head"><h2 id="j-count">รายการ</h2><span class="muted small">กดที่แถวเพื่อดูรายละเอียด</span></div><div id="j-list">${loading()}</div></section>`);
+
+    function draw() {
+      const q = f.q.trim().toLowerCase();
+      const list = jobs.filter((j) => (!f.status || j.status === f.status) && (!q ||
+        [j.job_no, j.plate, j.driver_name, j.title, j.note].concat(j.stops.map((s) => s.name)).join(' ').toLowerCase().includes(q)));
+      $('#j-count').textContent = `รายการ (${list.length})`;
+      $('#j-list').innerHTML = list.length ? jobTable(list) : `<div class="empty">${icon('search', 36)}<div>ไม่พบ Job ตามเงื่อนไข</div></div>`;
+      bindJobTable($('#j-list'));
+    }
+    async function load() {
+      $('#j-list').innerHTML = loading();
+      try { jobs = await API.call('listJobs', { from: f.from, to: f.to }); jobs.reverse(); draw(); }
+      catch (e) { $('#j-list').innerHTML = errorBox(e); }
+    }
+    $('#f-from').addEventListener('change', (e) => { f.from = e.target.value || t; load(); });
+    $('#f-to').addEventListener('change', (e) => { f.to = e.target.value || t; load(); });
+    $('#f-status').addEventListener('change', (e) => { f.status = e.target.value; draw(); });
+    $('#f-q').addEventListener('input', (e) => { f.q = e.target.value; draw(); });
+    load();
+  };
+
+  /* ====================== สร้าง / แก้ไข Job ====================== */
+  V.jobEdit = async function (params, query) {
+    const editId = params[0] || null;
+    const copyId = query.get('copy');
+    mount('jobs', loading('กำลังเตรียมข้อมูล…'));
+    let drivers, places, recent, src = null;
+    try {
+      const t = UI.today();
+      [drivers, places, recent, src] = await Promise.all([
+        API.call('listDrivers'), API.call('listPlaces'),
+        API.call('listJobs', { from: UI.addDays(t, -60), to: UI.addDays(t, 30) }),
+        editId || copyId ? API.call('getJob', { id: editId || copyId }) : Promise.resolve(null)
+      ]);
+    } catch (e) { mount('jobs', errorBox(e)); return; }
+
+    const plates = Array.from(new Set(recent.map((j) => j.plate).filter(Boolean)));
+    const st = {
+      job: { id: editId || '', date: App.state.dashDate || UI.today(), time: '', title: '', driver_id: '', plate: '', note: '' },
+      stops: [], tab: 'search', results: null, preview: null, dirtyRoute: !editId, original: editId ? src : null
+    };
+    if (src) {
+      const keep = ['time', 'title', 'driver_id', 'plate', 'note'];
+      keep.forEach((k) => { st.job[k] = src[k] || ''; });
+      if (editId) st.job.date = src.date;
+      st.stops = src.stops.map((s) => ({
+        id: editId ? s.id : '', name: s.name, address: s.address, lat: s.lat, lng: s.lng, map_url: s.map_url,
+        note: s.note, planned_time: s.planned_time, status: editId ? s.status : 'pending', arrived_at: editId ? s.arrived_at : ''
+      }));
+    }
+    if (editId && src.status === 'cancelled') { mount('jobs', `<div class="banner bad">Job นี้ถูกยกเลิกแล้ว แก้ไขไม่ได้</div><a class="back" href="#/admin/jobs/${esc(editId)}">← กลับ</a>`); return; }
+    const activeDrivers = drivers.filter((d) => d.active || d.id === st.job.driver_id);
+    const started = editId && src.status !== 'pending';
+
+    mount('jobs', `
+      <div class="page-head">
+        <div><a class="back" href="${editId ? '#/admin/jobs/' + esc(editId) : '#/admin/jobs'}">${icon('back', 16)}${editId ? 'กลับไปหน้า Job' : 'รายการ Job'}</a>
+          <h1>${editId ? 'แก้ไข ' + esc(src.job_no) : 'สร้าง Job ใหม่'}</h1>
+          <div class="sub">${copyId ? 'คัดลอกจาก ' + esc(src.job_no) + ' — ตรวจสอบวันที่ก่อนบันทึก' : 'กำหนดสถานที่ตามลำดับ คนขับจะเห็นงานนี้ในแอปทันทีที่บันทึก'}</div></div>
+        <div class="actions"><a class="btn" href="${editId ? '#/admin/jobs/' + esc(editId) : '#/admin/jobs'}">ยกเลิก</a>
+          <button type="button" class="btn btn-primary" data-save>${icon('check', 18)}บันทึก Job</button></div>
+      </div>
+      <div class="split">
+        <div class="main">
+          <section class="card card-pad" aria-label="ข้อมูล Job">
+            <h2 class="title">ข้อมูล Job</h2>
+            <div class="grid g3">
+              <label class="field"><span>วันที่ *</span><input type="date" class="input" data-j="date" value="${esc(st.job.date)}" required></label>
+              <label class="field"><span>เวลาเริ่มงาน</span><input type="time" class="input" data-j="time" value="${esc(st.job.time)}"></label>
+              <label class="field"><span>คนขับ *</span><select class="input" data-j="driver_id" ${started ? 'disabled' : ''}>
+                <option value="">— เลือกคนขับ —</option>
+                ${activeDrivers.map((d) => `<option value="${esc(d.id)}" ${d.id === st.job.driver_id ? 'selected' : ''}>${esc(d.name)}${d.active ? '' : ' (ปิดใช้งาน)'}</option>`).join('')}
+              </select>${started ? '<span class="hint">เริ่มงานแล้ว เปลี่ยนคนขับไม่ได้</span>' : (activeDrivers.length ? '' : '<span class="hint">ยังไม่มีคนขับ — <a href="#/admin/drivers">เพิ่มคนขับ</a></span>')}</label>
+            </div>
+            <div class="grid g2" style="margin-top:16px">
+              <label class="field"><span>ทะเบียนรถ *</span><input class="input" data-j="plate" list="plate-list" value="${esc(st.job.plate)}" placeholder="เช่น ฮข 4521" maxlength="20">
+                <datalist id="plate-list">${plates.map((p) => `<option value="${esc(p)}">`).join('')}</datalist></label>
+              <label class="field"><span>ชื่องาน</span><input class="input" data-j="title" value="${esc(st.job.title)}" placeholder="เช่น รับพนักงานกะเช้า, ทัวร์อยุธยา" maxlength="120"></label>
+            </div>
+            <label class="field" style="margin-top:16px"><span>หมายเหตุถึงคนขับ</span><textarea class="input" data-j="note" maxlength="500" placeholder="เช่น โทรแจ้งลูกค้าก่อนถึง 5 นาที">${esc(st.job.note)}</textarea></label>
+          </section>
+
+          <section class="card card-pad" aria-label="สถานที่" style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+              <h2 style="font-size:18px">สถานที่ตามลำดับ <span class="muted" style="font-weight:500;font-size:15px" id="s-count"></span></h2>
+              <span class="muted small">คนขับต้องถ่ายรูปเช็คอินทุกจุด</span>
+            </div>
+            <div id="s-list" style="display:flex;flex-direction:column;gap:10px"></div>
+            <div class="add-box" id="add-box"></div>
+          </section>
+        </div>
+        <aside class="side sticky">
+          <section class="card map-card" aria-label="ตัวอย่างเส้นทาง">
+            <div class="card-head"><h2>ตัวอย่างเส้นทาง</h2></div>
+            <div class="map sm" id="p-map"></div>
+          </section>
+          <section class="card card-pad" style="display:flex;flex-direction:column;gap:10px;font-size:14px" id="summary"></section>
+          <button type="button" class="btn btn-primary btn-lg" data-save>${icon('check', 18)}บันทึก Job</button>
+        </aside>
+      </div>`);
+
+    $$('[data-j]').forEach((el) => el.addEventListener('input', () => { st.job[el.dataset.j] = el.value; drawSummary(); }));
+    $$('[data-j]').forEach((el) => el.addEventListener('change', () => { st.job[el.dataset.j] = el.value; drawSummary(); }));
+
+    function drawStops() {
+      $('#s-count').textContent = `(${st.stops.length} จุด)`;
+      if (!st.stops.length) {
+        $('#s-list').innerHTML = `<div class="empty" style="padding:22px">${icon('pin', 32)}<div>ยังไม่มีสถานที่ — เพิ่มจากกล่องด้านล่าง</div></div>`;
+      } else {
+        $('#s-list').innerHTML = st.stops.map((s, i) => {
+          const locked = s.status === 'arrived';
+          return `<div class="stop-edit ${locked ? 'locked' : ''}">
+            <div class="num ${locked ? 'done' : ''}">${i + 1}</div>
+            <div class="body">
+              <input class="input" data-i="${i}" data-f="name" value="${esc(s.name)}" aria-label="ชื่อสถานที่ จุดที่ ${i + 1}" maxlength="120" placeholder="ชื่อสถานที่">
+              <div class="meta">
+                ${s.address ? `<span>${esc(s.address)}</span>` : ''}
+                ${UI.hasXY(s) ? '<span class="tag good">มีพิกัด</span>' : '<span class="tag warn">ไม่มีพิกัด · นำทางด้วยลิงก์</span>'}
+                <a href="${esc(UI.placeUrl(s))}" target="_blank" rel="noopener">ดูใน Google Maps</a>
+                ${locked ? `<span class="tag good">${icon('check', 12)}เช็คอินแล้ว ${esc(UI.hhmm(s.arrived_at))}</span>` : ''}
+              </div>
+              <div class="grid g2" style="gap:10px">
+                <label class="field"><span class="small">เวลานัด</span><input type="time" class="input sm" data-i="${i}" data-f="planned_time" value="${esc(s.planned_time)}"></label>
+                <label class="field"><span class="small">หมายเหตุจุดนี้</span><input class="input sm" data-i="${i}" data-f="note" value="${esc(s.note)}" maxlength="300" placeholder="เช่น รับ 3 คน, รอหน้าป้อม"></label>
+              </div>
+            </div>
+            <div class="tools">
+              <button type="button" class="btn sq btn-sm" data-move="${i}" data-d="-1" aria-label="เลื่อนจุดที่ ${i + 1} ขึ้น" ${i === 0 ? 'disabled' : ''}>${icon('up', 18)}</button>
+              <button type="button" class="btn sq btn-sm" data-move="${i}" data-d="1" aria-label="เลื่อนจุดที่ ${i + 1} ลง" ${i === st.stops.length - 1 ? 'disabled' : ''}>${icon('down', 18)}</button>
+              <button type="button" class="btn sq btn-sm btn-danger" data-del="${i}" aria-label="ลบจุดที่ ${i + 1}" ${locked ? 'disabled title="เช็คอินแล้ว ลบไม่ได้"' : ''}>${icon('trash', 18)}</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      $$('#s-list [data-f]').forEach((el) => el.addEventListener('input', () => {
+        st.stops[Number(el.dataset.i)][el.dataset.f] = el.value; drawSummary();
+      }));
+      $$('#s-list [data-move]').forEach((b) => b.addEventListener('click', () => {
+        const i = Number(b.dataset.move), j = i + Number(b.dataset.d);
+        if (j < 0 || j >= st.stops.length) return;
+        [st.stops[i], st.stops[j]] = [st.stops[j], st.stops[i]];
+        st.dirtyRoute = true; drawStops(); drawMap(); drawSummary();
+      }));
+      $$('#s-list [data-del]').forEach((b) => b.addEventListener('click', () => {
+        st.stops.splice(Number(b.dataset.del), 1);
+        st.dirtyRoute = true; drawStops(); drawMap(); drawSummary();
+      }));
+    }
+
+    function drawMap() {
+      UI.renderMap($('#p-map'), st.stops.map((s, i) => Object.assign({}, s, { seq: i + 1 })), {
+        polyline: !st.dirtyRoute && st.original ? st.original.route_polyline : '', emptyText: 'เพิ่มสถานที่เพื่อดูเส้นทาง'
+      });
+    }
+
+    function drawSummary() {
+      const times = st.stops.map((s) => s.planned_time).filter(Boolean);
+      const o = st.original;
+      const drv = drivers.find((d) => d.id === st.job.driver_id);
+      $('#summary').innerHTML = `<b style="font-size:16px">สรุป</b>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">วันที่</span><b>${esc(UI.fmtDate(st.job.date))}${st.job.time ? ' · ' + esc(st.job.time) : ''}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">คนขับ / รถ</span><b>${esc(drv ? drv.name : '-')} · ${esc(st.job.plate || '-')}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">จำนวนสถานที่</span><b>${st.stops.length} จุด</b></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">ช่วงเวลานัด</span><b>${times.length ? esc(times[0]) + ' – ' + esc(times[times.length - 1]) : '-'}</b></div>
+        <div style="display:flex;justify-content:space-between;gap:8px"><span class="muted">ระยะทางประมาณ</span><b>${!st.dirtyRoute && o && o.distance_km ? o.distance_km + ' กม. · ' + o.duration_min + ' นาที' : 'คำนวณหลังบันทึก'}</b></div>`;
+    }
+
+    function addStop(p) {
+      st.stops.push({ id: '', name: p.name || '', address: p.address || '', lat: p.lat, lng: p.lng, map_url: p.map_url || '', note: '', planned_time: '', status: 'pending' });
+      st.dirtyRoute = true;
+      drawStops(); drawMap(); drawSummary();
+      toast(`เพิ่ม "${p.name || 'สถานที่'}" เป็นจุดที่ ${st.stops.length} แล้ว`, 'good');
+    }
+
+    function drawAdd() {
+      const tabs = [['search', 'ค้นหาสถานที่', 'search'], ['link', 'วางลิงก์ Google Maps', 'link'], ['saved', 'สถานที่ที่เคยใช้', 'pin']];
+      let body = '';
+      if (st.tab === 'search') {
+        body = `<form class="row" id="f-search">
+            <label class="field grow"><span>ค้นหาชื่อสถานที่หรือที่อยู่</span><input class="input" id="q" placeholder="เช่น เซ็นทรัล บางนา, สนามบินสุวรรณภูมิ" value="${esc(st.lastQ || '')}" autocomplete="off"></label>
+            <button class="btn btn-dark" type="submit">${icon('search', 18)}ค้นหา</button>
+          </form>
+          ${API.isDemo() ? '<div class="muted small">โหมดตัวอย่างค้นได้เฉพาะสถานที่ตัวอย่าง เช่น บางนา, สนามบิน, อยุธยา — ระบบจริงค้นจาก Google</div>' : '<div class="muted small">ผลค้นหาจาก Google · ถ้าไม่เจอ ให้เปิดค้นใน Google Maps แล้วคัดลอกลิงก์มาวางในแท็บ "วางลิงก์"</div>'}
+          <div id="results" style="display:flex;flex-direction:column;gap:8px">${resultsHtml()}</div>`;
+      } else if (st.tab === 'link') {
+        body = `<form class="row" id="f-link">
+            <label class="field grow"><span>ลิงก์จาก Google Maps หรือพิกัด</span><input class="input" id="link" placeholder="https://maps.app.goo.gl/… หรือ 13.7462, 100.5347" autocomplete="off"></label>
+            <button class="btn btn-dark" type="submit">${icon('link', 18)}อ่านลิงก์</button>
+          </form>
+          <div class="muted small">ใน Google Maps: เลือกสถานที่ → กด "แชร์" → "คัดลอกลิงก์" แล้วนำมาวางที่นี่</div>
+          <div id="preview">${previewHtml()}</div>`;
+      } else {
+        body = `<label class="field"><span>ค้นหาในสถานที่ที่เคยใช้ (${places.length})</span><input class="input" id="pq" placeholder="พิมพ์เพื่อกรอง" autocomplete="off"></label>
+          <div id="saved" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto"></div>`;
+      }
+      $('#add-box').innerHTML = `<b>เพิ่มสถานที่</b>
+        <div class="tabs" role="tablist">${tabs.map(([k, t, ic]) => `<button type="button" role="tab" aria-selected="${st.tab === k}" class="${st.tab === k ? 'on' : ''}" data-tab="${k}">${t}</button>`).join('')}</div>${body}`;
+      $$('[data-tab]', $('#add-box')).forEach((b) => b.addEventListener('click', () => { st.tab = b.dataset.tab; drawAdd(); }));
+
+      if (st.tab === 'search') {
+        $('#f-search').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const q = $('#q').value.trim();
+          if (q.length < 2) { toast('พิมพ์คำค้นหาอย่างน้อย 2 ตัวอักษร', 'bad'); return; }
+          st.lastQ = q;
+          const btn = e.submitter || $('#f-search button');
+          busy(btn, true, 'กำลังค้นหา…');
+          try { st.results = await API.call('searchPlace', { q }); }
+          catch (err) { toast(err.message, 'bad'); st.results = null; }
+          busy(btn, false);
+          $('#results').innerHTML = resultsHtml();
+          bindResults();
+        });
+        bindResults();
+      } else if (st.tab === 'link') {
+        $('#f-link').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const url = $('#link').value.trim();
+          if (!url) { toast('กรุณาวางลิงก์', 'bad'); return; }
+          const btn = e.submitter || $('#f-link button');
+          busy(btn, true, 'กำลังอ่าน…');
+          try {
+            const r = await API.call('resolveLink', { url });
+            st.preview = Object.assign({ address: '' }, r, { name: r.name || '' });
+          } catch (err) { toast(err.message, 'bad'); }
+          busy(btn, false);
+          $('#preview').innerHTML = previewHtml();
+          bindPreview();
+        });
+        bindPreview();
+      } else {
+        const drawSaved = () => {
+          const q = ($('#pq').value || '').trim().toLowerCase();
+          const list = places.filter((p) => !q || (p.name + ' ' + (p.address || '')).toLowerCase().includes(q)).slice(0, 60);
+          $('#saved').innerHTML = list.length ? list.map((p, i) => `<div class="result"><span class="grow"><span class="t">${esc(p.name)}</span><div class="s">${esc(p.address || (UI.hasXY(p) ? p.lat + ', ' + p.lng : 'มีแค่ลิงก์'))}</div></span>
+            <button type="button" class="btn btn-sm" data-add-saved="${places.indexOf(p)}">${icon('plus', 16)}เพิ่ม</button></div>`).join('')
+            : '<div class="muted small">ยังไม่มีสถานที่ที่เคยใช้ — สถานที่จะถูกบันทึกอัตโนมัติเมื่อบันทึก Job</div>';
+          $$('[data-add-saved]').forEach((b) => b.addEventListener('click', () => addStop(places[Number(b.dataset.addSaved)])));
+        };
+        $('#pq').addEventListener('input', drawSaved);
+        drawSaved();
+      }
+    }
+    function resultsHtml() {
+      if (st.results === null) return '';
+      const gq = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(st.lastQ || '')}`;
+      if (!st.results.length) return `<div class="banner info">ไม่พบสถานที่ — <a href="${esc(gq)}" target="_blank" rel="noopener">ลองค้นใน Google Maps</a> แล้วคัดลอกลิงก์มาวาง</div>`;
+      return st.results.map((r, i) => `<div class="result">
+          <span class="grow"><span class="t">${esc(r.name)}</span><div class="s">${esc(r.address)}</div></span>
+          <a class="btn btn-sm btn-ghost" href="${esc(r.map_url)}" target="_blank" rel="noopener" aria-label="ดู ${esc(r.name)} ใน Google Maps">${icon('external', 16)}</a>
+          <button type="button" class="btn btn-sm btn-primary" data-add-res="${i}">${icon('plus', 16)}เพิ่ม</button></div>`).join('') +
+        `<a class="small" href="${esc(gq)}" target="_blank" rel="noopener">ไม่ใช่ที่ต้องการ? เปิดค้นใน Google Maps</a>`;
+    }
+    function bindResults() {
+      $$('[data-add-res]').forEach((b) => b.addEventListener('click', () => addStop(st.results[Number(b.dataset.addRes)])));
+    }
+    function previewHtml() {
+      const p = st.preview;
+      if (!p) return '';
+      const xy = UI.hasXY(p);
+      return `<div class="card card-pad" style="display:flex;flex-direction:column;gap:12px;background:#FAFBFC">
+        ${xy ? `<iframe class="embed" title="ตัวอย่างตำแหน่ง" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${p.lat},${p.lng}&z=16&output=embed"></iframe>
+               <div class="small muted">พิกัด ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</div>`
+             : '<div class="banner warn">อ่านพิกัดจากลิงก์นี้ไม่ได้ — ยังเพิ่มได้ คนขับจะนำทางด้วยลิงก์เดิม แต่จะไม่แสดงบนแผนที่</div>'}
+        <div class="grid g2">
+          <label class="field"><span>ชื่อสถานที่ *</span><input class="input" id="pv-name" value="${esc(p.name)}" placeholder="ตั้งชื่อให้คนขับเข้าใจง่าย" maxlength="120"></label>
+          <label class="field"><span>ที่อยู่ / จุดสังเกต</span><input class="input" id="pv-addr" value="${esc(p.address)}" maxlength="250"></label>
+        </div>
+        <div class="actions"><button type="button" class="btn btn-primary" id="pv-add">${icon('plus', 18)}เพิ่มจุดนี้</button><a href="${esc(p.map_url)}" target="_blank" rel="noopener" class="small">เปิดลิงก์</a></div>
+      </div>`;
+    }
+    function bindPreview() {
+      const b = $('#pv-add');
+      if (!b) return;
+      b.addEventListener('click', () => {
+        const name = $('#pv-name').value.trim();
+        if (!name) { toast('กรุณาตั้งชื่อสถานที่', 'bad'); $('#pv-name').focus(); return; }
+        addStop(Object.assign({}, st.preview, { name, address: $('#pv-addr').value.trim() }));
+        st.preview = null;
+        drawAdd();
+      });
+    }
+
+    async function save(btn) {
+      const j = st.job;
+      if (!j.date) return toast('กรุณาเลือกวันที่', 'bad');
+      if (!j.driver_id) return toast('กรุณาเลือกคนขับ', 'bad');
+      if (!j.plate.trim()) return toast('กรุณาใส่ทะเบียนรถ', 'bad');
+      if (!st.stops.length) return toast('กรุณาเพิ่มสถานที่อย่างน้อย 1 จุด', 'bad');
+      const empty = st.stops.findIndex((s) => !String(s.name || '').trim());
+      if (empty >= 0) return toast(`สถานที่จุดที่ ${empty + 1} ยังไม่มีชื่อ`, 'bad');
+      $$('[data-save]').forEach((b) => busy(b, true));
+      try {
+        const saved = await API.call('saveJob', {
+          job: j,
+          stops: st.stops.map((s) => ({ id: s.id, name: s.name, address: s.address, lat: s.lat, lng: s.lng, map_url: s.map_url, note: s.note, planned_time: s.planned_time }))
+        });
+        toast(`บันทึก ${saved.job_no} แล้ว`, 'good');
+        location.hash = '#/admin/jobs/' + saved.id;
+      } catch (e) {
+        toast(e.message, 'bad');
+        $$('[data-save]').forEach((b) => busy(b, false));
+      }
+    }
+    $$('[data-save]').forEach((b) => b.addEventListener('click', () => save(b)));
+
+    drawStops(); drawAdd(); drawMap(); drawSummary();
+  };
+
+  /* ====================== รายละเอียด Job ====================== */
+  V.jobDetail = async function (params) {
+    const id = params[0];
+    mount('jobs', loading());
+    let job;
+    try { job = await API.call('getJob', { id }); } catch (e) { mount('jobs', errorBox(e) + '<a class="back" href="#/admin/jobs">← รายการ Job</a>'); return; }
+
+    const canEdit = job.status !== 'cancelled';
+    const canCancel = job.status !== 'done' && job.status !== 'cancelled';
+    const canDelete = job.done_count === 0;
+    mount('jobs', `
+      <div class="page-head">
+        <div><a class="back" href="#/admin/jobs">${icon('back', 16)}รายการ Job</a>
+          <h1 style="display:flex;flex-wrap:wrap;align-items:center;gap:10px"><span class="mono">${esc(job.job_no)}</span>${chip(job.status)}</h1>
+          <div class="sub">${esc(UI.jobTitle(job))}</div></div>
+        <div class="actions">
+          ${canEdit ? `<a class="btn" href="#/admin/jobs/${esc(job.id)}/edit">${icon('edit', 18)}แก้ไข</a>` : ''}
+          <a class="btn" href="#/admin/jobs/new?copy=${esc(job.id)}">${icon('copy', 18)}คัดลอกเป็น Job ใหม่</a>
+          <a class="btn" href="${esc(UI.routeUrl(job.stops))}" target="_blank" rel="noopener">${icon('nav', 18)}เส้นทางใน Google Maps</a>
+          ${canCancel ? `<button type="button" class="btn btn-danger" data-cancel>ยกเลิก Job</button>` : ''}
+          ${canDelete ? `<button type="button" class="btn btn-danger btn-ghost" data-delete aria-label="ลบ Job">${icon('trash', 18)}ลบ</button>` : ''}
+        </div>
+      </div>
+      ${job.status === 'cancelled' ? '<div class="banner bad">Job นี้ถูกยกเลิกแล้ว คนขับจะไม่เห็นงานนี้ในแอป</div>' : ''}
+      <div class="split">
+        <div class="main">
+          <section class="card map-card" aria-label="แผนที่">
+            <div class="card-head"><h2>เส้นทางและจุดเช็คอิน</h2>
+              <div class="legend"><span><i class="dot" style="background:var(--good)"></i>เช็คอินแล้ว</span><span><i class="dot" style="background:#fff;border:2px solid var(--brand)"></i>ยังไม่ถึง</span><span><i class="dot" style="background:#7C3AED"></i>ตำแหน่งที่ถ่ายรูป</span></div></div>
+            <div class="map" id="j-map"></div>
+          </section>
+          <section class="card card-pad" aria-label="สถานที่และการเช็คอิน">
+            <h2 class="title">สถานที่และการเช็คอิน <span class="muted" style="font-weight:500;font-size:15px">(${job.done_count}/${job.total_count})</span></h2>
+            <div class="timeline">${job.stops.map((s) => stopTimeline(job, s)).join('')}</div>
+          </section>
+        </div>
+        <aside class="side">
+          <section class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+            <div class="kv">
+              <div><span class="k">วันที่</span><span class="v">${esc(UI.fmtDate(job.date))}</span></div>
+              <div><span class="k">เวลาเริ่มงาน</span><span class="v">${esc(job.time ? job.time + ' น.' : '-')}</span></div>
+              <div><span class="k">คนขับ</span><span class="v">${esc(job.driver_name)}</span></div>
+              <div><span class="k">ทะเบียนรถ</span><span class="v mono">${esc(job.plate)}</span></div>
+              <div><span class="k">ระยะทางประมาณ</span><span class="v">${job.distance_km ? job.distance_km + ' กม.' : '-'}</span></div>
+              <div><span class="k">เวลาขับประมาณ</span><span class="v">${job.duration_min ? job.duration_min + ' นาที' : '-'}</span></div>
+              <div><span class="k">เช็คอินจุดแรก</span><span class="v">${esc(job.started_at ? UI.fmtStamp(job.started_at) : '-')}</span></div>
+              <div><span class="k">ปิดงาน</span><span class="v">${esc(job.finished_at ? UI.fmtStamp(job.finished_at) : '-')}</span></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">ความคืบหน้า</span><b>${job.done_count}/${job.total_count} จุด</b></div>
+              ${UI.progressBar(job)}
+            </div>
+            ${job.note ? `<div class="info-row"><span class="k">หมายเหตุถึงคนขับ</span><span style="white-space:pre-line">${esc(job.note)}</span></div>` : ''}
+          </section>
+          <div class="muted small">สร้างเมื่อ ${esc(UI.fmtStamp(job.created_at))} · แก้ไขล่าสุด ${esc(UI.fmtStamp(job.updated_at))}</div>
+        </aside>
+      </div>`);
+
+    UI.renderMap($('#j-map'), job.stops, { polyline: job.route_polyline, showCheckins: true, markNext: job.status !== 'done' });
+    $$('[data-photo]').forEach((b) => b.addEventListener('click', () => UI.showPhoto(b.dataset.photo, b.dataset.cap)));
+    const c = $('[data-cancel]');
+    if (c) c.addEventListener('click', async () => {
+      if (!(await UI.confirmBox(`ยกเลิก ${job.job_no}? คนขับจะไม่เห็นงานนี้อีก`, 'ยกเลิก Job', true))) return;
+      busy(c, true, 'กำลังยกเลิก…');
+      try { await API.call('cancelJob', { id: job.id }); toast('ยกเลิก Job แล้ว'); V.jobDetail(params); }
+      catch (e) { toast(e.message, 'bad'); busy(c, false); }
+    });
+    const d = $('[data-delete]');
+    if (d) d.addEventListener('click', async () => {
+      if (!(await UI.confirmBox(`ลบ ${job.job_no} ถาวร?`, 'ลบ Job', true))) return;
+      busy(d, true, 'กำลังลบ…');
+      try { await API.call('deleteJob', { id: job.id }); toast('ลบ Job แล้ว'); location.hash = '#/admin/jobs'; }
+      catch (e) { toast(e.message, 'bad'); busy(d, false); }
+    });
+  };
+
+  function stopTimeline(job, s) {
+    const done = s.status === 'arrived';
+    const diff = done ? UI.minutesDiff(s.planned_time, s.arrived_at) : null;
+    const late = overdueMin(job, s);
+    let timing = s.planned_time ? `นัด ${esc(s.planned_time)} น.` : 'ไม่ได้กำหนดเวลานัด';
+    if (done) {
+      timing += ` · <b style="color:var(--good-ink)">เช็คอิน ${esc(UI.fmtStamp(s.arrived_at))}</b>`;
+      if (diff !== null && diff > 5) timing += ` <span class="tag warn">ช้า ${UI.fmtMin(diff)}</span>`;
+      else if (diff !== null && diff < -5) timing += ` <span class="tag">ก่อนเวลา ${UI.fmtMin(-diff)}</span>`;
+    } else if (late !== null && late > 0) {
+      timing += ` <span class="tag warn">เลยเวลานัด ${UI.fmtMin(late)}</span>`;
+    } else if (job.status !== 'cancelled' && isOverdue(job, s)) {
+      timing += ' <span class="tag warn">ยังไม่เช็คอิน</span>';
+    }
+    const dist = done ? UI.distanceM(s, { lat: s.arrive_lat, lng: s.arrive_lng }) : null;
+    return `<div class="tl-item ${done ? 'done' : ''}">
+      <div class="num ${done ? 'done' : 'idle'}">${done ? icon('check', 16) : s.seq}</div>
+      <div class="body">
+        <span class="name">${esc(s.name)}</span>
+        ${s.address ? `<span class="muted small">${esc(s.address)}</span>` : ''}
+        <span class="small">${timing}</span>
+        ${s.note ? `<span class="small muted">${icon('note', 14)} ${esc(s.note)}</span>` : ''}
+        ${done ? `<div class="tl-photo">
+            ${s.photo_url ? `<button type="button" data-photo="${esc(s.photo_url)}" data-cap="${esc(s.seq + '. ' + s.name)}" aria-label="ดูรูปเช็คอิน ${esc(s.name)}"><img src="${esc(s.photo_url)}" alt="" loading="lazy"></button>` : ''}
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:14px;min-width:0">
+              ${s.checkin_note ? `<span>“${esc(s.checkin_note)}”</span>` : ''}
+              ${dist !== null ? `<span class="tag ${dist > 300 ? 'warn' : 'good'}">ถ่ายรูปห่างจากจุด ${UI.fmtDist(dist)}</span>` : (s.arrive_lat === null ? '<span class="tag">ไม่มีตำแหน่งตอนถ่ายรูป</span>' : '')}
+              ${s.arrive_lat !== null ? `<a class="small" href="https://www.google.com/maps/search/?api=1&query=${s.arrive_lat},${s.arrive_lng}" target="_blank" rel="noopener">ดูตำแหน่งที่ถ่ายรูป</a>` : ''}
+            </div></div>` : ''}
+        <a class="small" href="${esc(UI.placeUrl(s))}" target="_blank" rel="noopener">ดูสถานที่ใน Google Maps</a>
+      </div></div>`;
+  }
+
+  /* ====================== คนขับ ====================== */
+  V.drivers = async function () {
+    mount('drivers', `
+      <div class="page-head"><div><h1>คนขับ</h1><div class="sub">เพิ่มคนขับ ตั้ง PIN และปิดการใช้งาน</div></div></div>
+      <div class="split">
+        <section class="main card" aria-label="รายชื่อคนขับ"><div class="card-head"><h2 id="dr-count">รายชื่อคนขับ</h2></div><div id="dr-list">${loading()}</div></section>
+        <aside class="side">
+          <form class="card card-pad" id="dr-form" style="display:flex;flex-direction:column;gap:14px" autocomplete="off">
+            <h2 style="font-size:18px">เพิ่มคนขับ</h2>
+            <label class="field"><span>ชื่อที่แสดงในแอป</span><input class="input" name="name" maxlength="60" placeholder="เช่น สมชาย ใจดี" required></label>
+            <label class="field"><span>PIN 6 หลัก</span><input class="input mono" name="pin" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="••••••" required>
+              <span class="hint">บอก PIN นี้กับคนขับ ใช้เข้าแอปคู่กับชื่อ</span></label>
+            <button class="btn btn-primary" type="submit">${icon('plus', 18)}เพิ่มคนขับ</button>
+          </form>
+          <section class="card card-pad" style="display:flex;flex-direction:column;gap:10px">
+            <b>ให้คนขับเข้าแอป</b>
+            <ol class="steps-mini"><li>ส่งลิงก์แอปให้คนขับ</li><li>คนขับเปิดในมือถือ แล้วกด "เพิ่มลงหน้าจอหลัก"</li><li>เลือกชื่อตัวเอง แล้วใส่ PIN</li></ol>
+            <div class="actions"><button type="button" class="btn btn-sm" data-copy-link>${icon('copy', 16)}คัดลอกลิงก์</button>
+              <a class="btn btn-sm" href="https://line.me/R/msg/text/?${encodeURIComponent('ลิงก์แอปรับงาน ' + API.driverLink())}" target="_blank" rel="noopener">${icon('chat', 16)}ส่งทาง LINE</a></div>
+          </section>
+        </aside>
+      </div>`);
+    $('[data-copy-link]').addEventListener('click', () => UI.copyText(API.driverLink()));
+
+    let list = [];
+    async function load() {
+      try { list = await API.call('listDrivers'); draw(); } catch (e) { $('#dr-list').innerHTML = errorBox(e); }
+    }
+    function draw() {
+      $('#dr-count').textContent = `รายชื่อคนขับ (${list.filter((d) => d.active).length} คนที่ใช้งาน)`;
+      if (!list.length) { $('#dr-list').innerHTML = `<div class="empty">${icon('users', 36)}<div>ยังไม่มีคนขับ — เพิ่มจากฟอร์มด้านขวา</div></div>`; return; }
+      $('#dr-list').innerHTML = `<div class="table-wrap"><table class="tbl" style="min-width:560px"><thead><tr><th>ชื่อ</th><th>สถานะ</th><th>เพิ่มเมื่อ</th><th style="text-align:right;padding-right:20px">จัดการ</th></tr></thead><tbody>
+        ${list.map((d, i) => `<tr>
+          <td><div style="display:flex;align-items:center;gap:10px"><span class="avatar" style="background:var(--brand-soft);color:var(--brand-dark);width:32px;height:32px;font-size:14px">${esc(d.name.slice(0, 1))}</span><b>${esc(d.name)}</b></div></td>
+          <td>${d.active ? '<span class="chip st-done">ใช้งาน</span>' : '<span class="chip st-cancelled">ปิดใช้งาน</span>'}</td>
+          <td class="small muted">${esc(d.created_at ? UI.fmtDate(d.created_at, { short: true, noDay: true }) : '-')}</td>
+          <td style="text-align:right;padding-right:20px;white-space:nowrap">
+            <button type="button" class="btn btn-sm" data-act="pin" data-i="${i}">${icon('key', 16)}ตั้ง PIN ใหม่</button>
+            <button type="button" class="btn btn-sm" data-act="name" data-i="${i}" aria-label="แก้ชื่อ ${esc(d.name)}">${icon('edit', 16)}</button>
+            <button type="button" class="btn btn-sm ${d.active ? 'btn-danger' : ''}" data-act="toggle" data-i="${i}">${d.active ? 'ปิดใช้งาน' : 'เปิดใช้งาน'}</button>
+          </td></tr>`).join('')}</tbody></table></div>`;
+      $$('[data-act]', $('#dr-list')).forEach((b) => b.addEventListener('click', () => act(b.dataset.act, list[Number(b.dataset.i)])));
+    }
+    async function act(kind, d) {
+      if (kind === 'toggle') {
+        if (d.active && !(await UI.confirmBox(`ปิดการใช้งาน ${d.name}? คนขับจะเข้าแอปไม่ได้ (ประวัติงานยังอยู่)`, 'ปิดใช้งาน', true))) return;
+        try { await API.call('saveDriver', { driver: { id: d.id, name: d.name, active: !d.active } }); toast(d.active ? 'ปิดใช้งานแล้ว' : 'เปิดใช้งานแล้ว', 'good'); load(); }
+        catch (e) { toast(e.message, 'bad'); }
+        return;
+      }
+      const isPin = kind === 'pin';
+      const m = UI.modal({
+        title: isPin ? `ตั้ง PIN ใหม่ · ${d.name}` : 'แก้ชื่อคนขับ',
+        body: isPin
+          ? `<label class="field"><span>PIN ใหม่ 6 หลัก</span><input class="input mono" id="m-in" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" autocomplete="off"></label><div class="muted small">คนขับจะต้องเข้าระบบใหม่ด้วย PIN นี้</div>`
+          : `<label class="field"><span>ชื่อที่แสดงในแอป</span><input class="input" id="m-in" maxlength="60" value="${esc(d.name)}"></label>`,
+        foot: `<button class="btn" data-close>ยกเลิก</button><button class="btn btn-primary" data-ok>บันทึก</button>`
+      });
+      const ok = m.el.querySelector('[data-ok]');
+      ok.addEventListener('click', async () => {
+        const v = m.el.querySelector('#m-in').value.trim();
+        if (isPin && !/^\d{6}$/.test(v)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก', 'bad'); return; }
+        busy(ok, true);
+        try {
+          await API.call('saveDriver', { driver: Object.assign({ id: d.id, name: isPin ? d.name : v, active: d.active }, isPin ? { pin: v } : {}) });
+          m.close(); toast('บันทึกแล้ว', 'good'); load();
+        } catch (e) { toast(e.message, 'bad'); busy(ok, false); }
+      });
+    }
+    $('#dr-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fm = e.target, btn = fm.querySelector('button[type=submit]');
+      const name = fm.name.value.trim(), pin = fm.pin.value.trim();
+      if (!/^\d{6}$/.test(pin)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก', 'bad'); return; }
+      busy(btn, true);
+      try {
+        await API.call('saveDriver', { driver: { name, pin } });
+        toast(`เพิ่ม ${name} แล้ว`, 'good');
+        fm.reset(); load();
+      } catch (err) { toast(err.message, 'bad'); }
+      busy(btn, false);
+    });
+    load();
+  };
+
+  /* ====================== ตั้งค่า ====================== */
+  V.settings = async function () {
+    const s = API.session() || {};
+    const link = API.driverLink();
+    mount('settings', `
+      ${pinBanner()}
+      <div class="page-head"><div><h1>ตั้งค่า</h1><div class="sub">ข้อมูลบริษัท PIN แอดมิน และลิงก์สำหรับคนขับ</div></div></div>
+      <div class="setting-list">
+        <form class="card card-pad" id="st-company" style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="font-size:18px">ข้อมูลบริษัท</h2>
+          <label class="field"><span>ชื่อบริษัท (แสดงในหน้าเข้าสู่ระบบ)</span><input class="input" name="company" maxlength="80" value="${esc(s.company || '')}" required></label>
+          <button class="btn btn-primary" type="submit">บันทึก</button>
+        </form>
+        <form class="card card-pad" id="st-pin" style="display:flex;flex-direction:column;gap:14px" autocomplete="off">
+          <h2 style="font-size:18px">เปลี่ยน PIN แอดมิน</h2>
+          <label class="field"><span>PIN เดิม</span><input class="input mono" type="password" name="old" inputmode="numeric" maxlength="6" required></label>
+          <div class="grid g2">
+            <label class="field"><span>PIN ใหม่ 6 หลัก</span><input class="input mono" type="password" name="n1" inputmode="numeric" maxlength="6" required></label>
+            <label class="field"><span>ยืนยัน PIN ใหม่</span><input class="input mono" type="password" name="n2" inputmode="numeric" maxlength="6" required></label>
+          </div>
+          <span class="hint muted small">ลืม PIN? เปิด Apps Script แล้วเรียกใช้ฟังก์ชัน resetAdminPin (ดูในคู่มือ)</span>
+          <button class="btn btn-primary" type="submit">${icon('lock', 18)}เปลี่ยน PIN</button>
+        </form>
+        <section class="card card-pad" style="display:flex;flex-direction:column;gap:14px">
+          <h2 style="font-size:18px">ลิงก์สำหรับคนขับ</h2>
+          <div class="copy-box"><input class="input" readonly value="${esc(link)}" aria-label="ลิงก์สำหรับคนขับ" id="st-link"><button type="button" class="btn sq" data-copy aria-label="คัดลอกลิงก์">${icon('copy', 18)}</button></div>
+          <div class="actions">
+            <a class="btn" href="https://line.me/R/msg/text/?${encodeURIComponent('ลิงก์แอปรับงาน ' + link)}" target="_blank" rel="noopener">${icon('chat', 18)}ส่งทาง LINE</a>
+            <a class="btn" href="${esc(link)}" target="_blank" rel="noopener">${icon('external', 18)}เปิดลิงก์</a>
+          </div>
+          <ol class="steps-mini"><li>ส่งลิงก์นี้ให้คนขับ (ลิงก์ผูกกับระบบของบริษัทแล้ว)</li><li>คนขับเปิดใน Chrome / Safari แล้วกด "เพิ่มลงหน้าจอหลัก"</li><li>เลือกชื่อตัวเอง ใส่ PIN ที่แอดมินตั้งให้</li></ol>
+        </section>
+        <section class="card card-pad" style="display:flex;flex-direction:column;gap:12px">
+          <h2 style="font-size:18px">การเชื่อมต่อระบบ</h2>
+          <div class="kv">
+            <div><span class="k">ที่เก็บข้อมูล</span><span class="v">${API.isDemo() ? 'โหมดตัวอย่าง (เครื่องนี้)' : 'Google Sheet'}</span></div>
+            <div><span class="k">เวอร์ชันระบบหลังบ้าน</span><span class="v" id="st-ver">…</span></div>
+          </div>
+          ${API.isDemo() ? '' : `<div class="small muted" style="overflow-wrap:anywhere">${esc(API.apiUrl().replace(/(\/s\/.{8}).+(.{6}\/exec)$/, '$1…$2'))}</div>`}
+          <div class="actions">
+            <button type="button" class="btn" data-test>${icon('refresh', 18)}ทดสอบการเชื่อมต่อ</button>
+            ${API.lockedUrl() ? '' : `<button type="button" class="btn btn-danger" data-change>${API.isDemo() ? 'เชื่อมต่อ Google Sheet จริง' : 'เปลี่ยนลิงก์ระบบหลังบ้าน'}</button>`}
+          </div>
+        </section>
+      </div>`);
+
+    $('[data-copy]').addEventListener('click', () => UI.copyText(link));
+    const ping = async () => {
+      try { const p = await API.call('ping'); $('#st-ver').textContent = p.version; return p; }
+      catch (e) { $('#st-ver').textContent = 'เชื่อมต่อไม่ได้'; throw e; }
+    };
+    ping().catch(() => {});
+    $('[data-test]').addEventListener('click', async (e) => {
+      busy(e.currentTarget, true, 'กำลังทดสอบ…');
+      const b = e.currentTarget;
+      try { const p = await ping(); toast(`เชื่อมต่อปกติ · ${p.company}`, 'good'); } catch (err) { toast(err.message, 'bad'); }
+      busy(b, false);
+    });
+    const ch = $('[data-change]');
+    if (ch) ch.addEventListener('click', async () => {
+      if (!(await UI.confirmBox('ออกจากระบบและไปหน้าเชื่อมต่อระบบหลังบ้าน?', 'ดำเนินการต่อ'))) return;
+      App.state.setupFrom = API.isDemo() ? '' : API.apiUrl();
+      API.clearSession();
+      location.hash = '#/setup';
+    });
+    $('#st-company').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button');
+      busy(btn, true);
+      try {
+        const r = await API.call('saveSettings', { company_name: e.target.company.value.trim() });
+        API.patchSession({ company: r.company });
+        $('.brand-text span').textContent = r.company;
+        toast('บันทึกแล้ว', 'good');
+      } catch (err) { toast(err.message, 'bad'); }
+      busy(btn, false);
+    });
+    $('#st-pin').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = e.target, btn = f.querySelector('button');
+      if (!/^\d{6}$/.test(f.n1.value)) return toast('PIN ใหม่ต้องเป็นตัวเลข 6 หลัก', 'bad');
+      if (f.n1.value !== f.n2.value) return toast('ยืนยัน PIN ใหม่ไม่ตรงกัน', 'bad');
+      busy(btn, true);
+      try {
+        await API.call('changeAdminPin', { oldPin: f.old.value, newPin: f.n1.value });
+        API.patchSession({ pinDefault: false });
+        toast('เปลี่ยน PIN แล้ว', 'good');
+        V.settings();
+      } catch (err) { toast(err.message, 'bad'); busy(btn, false); }
+    });
+  };
+})();
+
+</script>
+<script>/* ---- assets/driver.js ---- */
+/* หน้าจอฝั่งคนขับ (มือถือ) */
+(function () {
+  'use strict';
+  const { $, $$, esc, icon, chip, toast, busy } = UI;
+  const V = (window.Views = window.Views || {});
+
+  function head(inner) { return `<header class="d-head">${inner}</header>`; }
+  function mount(html) {
+    $('#app').innerHTML = `<div class="phone">${App.demoBar()}${html}</div>`;
+    App.bindCommon();
+  }
+  const loading = (t) => `<div class="loading-block"><span class="spinner"></span>${esc(t || 'กำลังโหลด…')}</div>`;
+
+  /* ====================== งานของฉัน ====================== */
+  V.driverHome = async function () {
+    const s = API.session();
+    mount(head(`<div class="row1">
+        <span class="avatar" style="width:44px;height:44px;font-size:18px" aria-hidden="true">${esc((s.user.name || '?').slice(0, 1))}</span>
+        <div style="flex:1 1 auto;min-width:0"><h1>สวัสดี ${esc(s.user.name)}</h1><div class="sub">${esc(UI.fmtDate(UI.today()))} · ${esc(s.company || '')}</div></div>
+        <button type="button" class="icon-btn" id="h-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>
+        <button type="button" class="icon-btn" data-logout aria-label="ออกจากระบบ">${icon('logout')}</button>
+      </div>`) + `<main class="d-body" id="h-body">${loading()}</main>`);
+
+    async function load() {
+      const btn = $('#h-refresh');
+      if (btn) btn.disabled = true;
+      try {
+        const jobs = await API.call('listJobs');
+        draw(jobs);
+      } catch (e) {
+        $('#h-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><button class="btn" id="h-retry">ลองใหม่</button>`;
+        $('#h-retry').addEventListener('click', load);
+      } finally { if (btn) btn.disabled = false; }
+    }
+    function draw(jobs) {
+      const t = UI.today();
+      const groups = [
+        ['กำลังทำ', jobs.filter((j) => j.status === 'in_progress')],
+        ['ค้างจากวันก่อน', jobs.filter((j) => j.status === 'pending' && j.date < t)],
+        ['งานวันนี้', jobs.filter((j) => j.status === 'pending' && j.date === t)],
+        ['งานล่วงหน้า', jobs.filter((j) => j.status === 'pending' && j.date > t)],
+        ['เสร็จแล้ว', jobs.filter((j) => j.status === 'done' && j.date >= UI.addDays(t, -1)).reverse()]
+      ];
+      let html = '';
+      groups.forEach(([label, list]) => {
+        if (!list.length) return;
+        html += `<div class="d-sec">${label} (${list.length})</div>` + list.map(card).join('');
+      });
+      if (!html) html = `<div class="empty" style="background:#fff;border-radius:16px;border:1px solid var(--line)">${icon('van', 44)}<b style="color:var(--ink)">ยังไม่มีงาน</b><div>เมื่อแอดมินมอบหมายงาน จะแสดงที่นี่ — กดรีเฟรชเพื่อดูงานใหม่</div></div>`;
+      $('#h-body').innerHTML = html + `<div class="muted small" style="text-align:center">อัปเดตล่าสุด ${UI.bkkNow().time} น.</div>`;
+    }
+    function card(j) {
+      const nx = UI.nextStop(j);
+      const active = j.status === 'in_progress';
+      const label = active ? 'ทำงานต่อ' : j.status === 'pending' ? 'เริ่มงาน' : 'ดูรายละเอียด';
+      return `<article class="d-card ${active ? 'active' : ''}">
+        <div class="top"><span class="mono small muted">${esc(j.job_no)}</span>${chip(j.status)}</div>
+        <div class="title">${esc(UI.jobTitle(j))}</div>
+        <div class="muted small">${esc(UI.relDay(j.date))}${j.time ? ' · เริ่ม ' + esc(j.time) + ' น.' : ''} · ทะเบียน <b class="mono" style="color:var(--ink)">${esc(j.plate)}</b> · ${j.total_count} จุด</div>
+        ${j.status !== 'pending' ? `<div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:14px"><span class="muted">${nx ? 'ถัดไป: ' + esc(nx.name) : 'ครบทุกจุดแล้ว'}</span><b>${j.done_count}/${j.total_count}</b></div>${UI.progressBar(j)}</div>`
+          : (nx ? `<div class="small">จุดแรก: <b>${esc(nx.name)}</b>${nx.planned_time ? ' · นัด ' + esc(nx.planned_time) : ''}</div>` : '')}
+        <a class="btn ${j.status === 'done' ? '' : 'btn-primary'} btn-lg btn-block" href="#/driver/job/${esc(j.id)}">${label}</a>
+      </article>`;
+    }
+    $('#h-refresh').addEventListener('click', load);
+    const onVis = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', onVis);
+    App.onLeave(() => document.removeEventListener('visibilitychange', onVis));
+    load();
+  };
+
+  /* ====================== ทำงานทีละจุด ====================== */
+  V.driverJob = async function (params) {
+    const id = params[0];
+    const st = { job: null, focus: null };
+    mount(head(`<div class="row1">
+        <a class="icon-btn" href="#/driver" aria-label="กลับไปหน้างานของฉัน">${icon('back', 22)}</a>
+        <div style="flex:1 1 auto;min-width:0" id="j-head"><h1 style="font-size:18px">กำลังโหลด…</h1></div>
+        <button type="button" class="icon-btn" id="j-refresh" aria-label="รีเฟรช">${icon('refresh')}</button>
+      </div>`) + `<main class="d-body" id="j-body">${loading()}</main>
+      <input type="file" accept="image/*" capture="environment" id="cam" class="hidden" aria-hidden="true" tabindex="-1">`);
+
+    async function load() {
+      try { st.job = await API.call('getJob', { id }); draw(); }
+      catch (e) { $('#j-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div><a class="btn" href="#/driver">กลับ</a>`; }
+    }
+
+    function draw() {
+      const j = st.job;
+      $('#j-head').innerHTML = `<h1 style="font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(UI.jobTitle(j))}</h1>
+        <div class="sub"><span class="mono">${esc(j.job_no)}</span> · ${esc(j.plate)}</div>`;
+      const pending = j.stops.filter((s) => s.status !== 'arrived');
+      const cur = j.status === 'cancelled' ? null : (pending.find((s) => s.id === st.focus) || pending[0] || null);
+      let html = '';
+      if (j.status === 'cancelled') html += '<div class="banner bad">Job นี้ถูกยกเลิกแล้ว</div>';
+      if (j.note) html += `<div class="banner info" style="align-items:flex-start">${icon('note', 18)}<span style="flex:1 1 200px;white-space:pre-line"><b>หมายเหตุจากแอดมิน</b><br>${esc(j.note)}</span></div>`;
+
+      if (j.status === 'cancelled') {
+        /* แสดงแค่รายการจุด */
+      } else if (j.status === 'done' || !cur) {
+        html += `<div class="done-card"><div class="done-ico">${icon('check', 36, 'stroke-width="2.6"')}</div>
+          <b style="font-size:22px">ปิดงานเรียบร้อย</b>
+          <span class="muted">เช็คอินครบ ${j.total_count} จุด${j.finished_at ? ' · เสร็จ ' + esc(UI.hhmm(j.finished_at)) + ' น.' : ''}</span>
+          <a class="btn btn-primary btn-lg btn-block" href="#/driver">กลับไปหน้างานของฉัน</a></div>`;
+      } else {
+        const idx = j.stops.indexOf(cur) + 1;
+        html += `<section class="cur-stop" aria-label="จุดปัจจุบัน">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span style="font-weight:600;color:var(--brand)">จุดที่ ${idx} จาก ${j.total_count}</span>
+            ${cur.planned_time ? `<span class="chip plain st-in_progress">${icon('clock', 14)}นัด ${esc(cur.planned_time)}</span>` : ''}
+          </div>
+          <div><div class="name">${esc(cur.name)}</div>${cur.address ? `<div class="addr">${esc(cur.address)}</div>` : ''}</div>
+          ${cur.note ? `<div class="banner warn" style="padding:10px 12px">${icon('note', 18)}${esc(cur.note)}</div>` : ''}
+          <div class="grid g2 keep" style="gap:10px">
+            <a class="btn btn-lg" href="${esc(UI.navUrl(cur))}" target="_blank" rel="noopener">${icon('nav')}นำทาง</a>
+            <a class="btn btn-lg" href="${esc(UI.routeUrl(pending))}" target="_blank" rel="noopener">${icon('route')}ทั้งเส้นทาง</a>
+          </div>
+          <button type="button" class="btn btn-primary btn-block big-check" id="btn-check">${icon('camera', 24)}ถึงแล้ว · ถ่ายรูปเช็คอิน</button>
+          <div class="muted small" style="text-align:center">ระบบบันทึกเวลาและตำแหน่งตอนถ่ายรูป</div>
+        </section>`;
+      }
+
+      html += `<section class="step-list" aria-label="ทุกจุดใน Job"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b>ทุกจุดใน Job นี้</b><span class="muted small">${j.done_count}/${j.total_count} จุด</span></div>
+        ${j.stops.map((s) => {
+          const done = s.status === 'arrived';
+          const now = cur && s.id === cur.id;
+          return `<div class="step">
+            <div class="num ${done ? 'done' : now ? '' : 'idle'}" style="width:28px;height:28px;font-size:13px">${done ? icon('check', 14) : s.seq}</div>
+            <div class="grow"><span style="font-weight:600;${done ? 'color:var(--muted)' : ''}">${esc(s.name)}</span>
+              <span class="small muted">${done ? 'เช็คอิน ' + esc(UI.hhmm(s.arrived_at)) + ' น.' + (s.planned_time ? ' · นัด ' + esc(s.planned_time) : '') : (s.planned_time ? 'นัด ' + esc(s.planned_time) + ' น.' : 'ไม่ได้กำหนดเวลา')}${now ? ' · <b style="color:var(--brand)">จุดปัจจุบัน</b>' : ''}</span></div>
+            ${!done && !now && j.status !== 'cancelled' ? `<button type="button" class="btn btn-sm" data-focus="${esc(s.id)}">ไปจุดนี้ก่อน</button>` : ''}
+          </div>`;
+        }).join('')}</section>
+        <section class="card map-card" aria-label="แผนที่"><div class="map xs" id="j-map"></div></section>`;
+      $('#j-body').innerHTML = html;
+      UI.renderMap($('#j-map'), j.stops, { polyline: j.route_polyline, markNext: true });
+      $$('[data-focus]').forEach((b) => b.addEventListener('click', () => { st.focus = b.dataset.focus; draw(); window.scrollTo({ top: 0, behavior: 'smooth' }); }));
+      const btn = $('#btn-check');
+      if (btn) btn.addEventListener('click', () => { st.target = cur; const c = $('#cam'); c.value = ''; c.click(); });
+    }
+
+    $('#cam').addEventListener('change', async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file || !st.target) return;
+      openCheckin(st.target, file);
+    });
+
+    async function openCheckin(stop, file) {
+      const geo = getLocation();
+      const m = UI.modal({
+        title: `เช็คอิน · ${stop.name}`,
+        body: `<div id="ci-img" class="loading-block" style="background:#0B1F33;border-radius:12px;color:#C9D5E2"><span class="spinner"></span>กำลังเตรียมรูป…</div>
+          <div class="small muted" id="ci-geo">${icon('pin', 14)} กำลังหาตำแหน่ง…</div>
+          <label class="field"><span>หมายเหตุ (ถ้ามี)</span><textarea class="input" id="ci-note" maxlength="300" rows="2" placeholder="เช่น ลูกค้าขึ้นรถครบ 3 คน"></textarea></label>`,
+        foot: `<button type="button" class="btn btn-lg" data-retake>${icon('camera', 18)}ถ่ายใหม่</button><button type="button" class="btn btn-good btn-lg" data-ok disabled>${icon('check', 20)}ยืนยันเช็คอิน</button>`
+      });
+      let photo = null, pos = null;
+      const ok = m.el.querySelector('[data-ok]');
+      geo.then((p) => {
+        pos = p;
+        const el = m.el.querySelector('#ci-geo');
+        if (el) el.innerHTML = p ? `${icon('pin', 14)} ได้ตำแหน่งแล้ว (แม่นยำ ±${Math.round(p.acc)} ม.)` : `${icon('pin', 14)} ไม่ได้ตำแหน่ง — ยังเช็คอินได้ (เปิดการเข้าถึงตำแหน่งเพื่อความแม่นยำ)`;
+      });
+      try {
+        photo = await processPhoto(file, [stop.name, `${UI.fmtDate(UI.today(), { noDay: true })} ${UI.bkkNow().time} น. · ${st.job.job_no} · ${st.job.plate}`], API.isDemo() ? 560 : 1280);
+        m.el.querySelector('#ci-img').outerHTML = `<img class="photo-preview" src="${photo}" alt="รูปเช็คอินที่ถ่าย">`;
+        ok.disabled = false;
+      } catch (err) {
+        m.el.querySelector('#ci-img').outerHTML = `<div class="banner bad">อ่านรูปไม่ได้ กรุณาถ่ายใหม่</div>`;
+      }
+      m.el.querySelector('[data-retake]').addEventListener('click', () => { m.close(); const c = $('#cam'); c.value = ''; c.click(); });
+      ok.addEventListener('click', async () => {
+        if (!photo) return;
+        busy(ok, true, 'กำลังส่งรูป…');
+        m.el.querySelector('[data-retake]').disabled = true;
+        const p = pos || (await Promise.race([geo, new Promise((r) => setTimeout(() => r(null), 3000))]));
+        try {
+          st.job = await API.call('checkIn', {
+            stopId: stop.id, photo, note: m.el.querySelector('#ci-note').value.trim(),
+            lat: p ? p.lat : null, lng: p ? p.lng : null
+          });
+          m.close();
+          st.focus = null;
+          toast(st.job.status === 'done' ? 'เช็คอินครบทุกจุด ปิดงานแล้ว' : `เช็คอิน "${stop.name}" แล้ว`, 'good');
+          draw();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (err) {
+          toast(err.message, 'bad');
+          busy(ok, false);
+          m.el.querySelector('[data-retake]').disabled = false;
+        }
+      });
+    }
+
+    $('#j-refresh').addEventListener('click', load);
+    load();
+  };
+
+  /* ---------- ตำแหน่งและรูป ---------- */
+  function getLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+      );
+    });
+  }
+
+  async function loadImage(file) {
+    if (window.createImageBitmap) {
+      try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { /* ใช้วิธีสำรอง */ }
+    }
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+      img.src = url;
+    });
+  }
+
+  /* ย่อรูปและพิมพ์ชื่อสถานที่ + เวลา ลงบนรูป */
+  async function processPhoto(file, lines, maxSide) {
+    const img = await loadImage(file);
+    const w0 = img.width, h0 = img.height;
+    const k = Math.min(1, maxSide / Math.max(w0, h0));
+    const w = Math.round(w0 * k), h = Math.round(h0 * k);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    try { await document.fonts.load('600 20px "IBM Plex Sans Thai"'); } catch (e) { /* ใช้ฟอนต์ระบบ */ }
+    const band = Math.max(54, Math.round(h * 0.12));
+    ctx.fillStyle = 'rgba(11,31,51,.62)';
+    ctx.fillRect(0, h - band, w, band);
+    const f1 = Math.round(band * 0.34), f2 = Math.round(band * 0.25), pad = Math.round(band * 0.28);
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = `600 ${f1}px "IBM Plex Sans Thai", sans-serif`;
+    ctx.fillText(fit(ctx, lines[0], w - pad * 2), pad, h - band + pad + f1 * 0.8);
+    ctx.font = `400 ${f2}px "IBM Plex Sans Thai", sans-serif`;
+    ctx.fillStyle = '#DCE6F0';
+    ctx.fillText(fit(ctx, lines[1], w - pad * 2), pad, h - pad * 0.7);
+    if (img.close) img.close();
+    return c.toDataURL('image/jpeg', 0.76);
+  }
+  function fit(ctx, text, max) {
+    let t = String(text || '');
+    if (ctx.measureText(t).width <= max) return t;
+    while (t.length > 1 && ctx.measureText(t + '…').width > max) t = t.slice(0, -1);
+    return t + '…';
+  }
+})();
+
+</script>
+<script>/* ---- assets/app.js ---- */
+/* ตัวควบคุมหลัก: เส้นทางหน้า เข้าสู่ระบบ และเชื่อมต่อระบบ */
+(function () {
+  'use strict';
+  const { $, $$, esc, icon, toast, busy } = UI;
+  const V = window.Views;
+  const CONFIG = window.STJ_CONFIG || {};
+  if (CONFIG.BRAND) document.documentElement.style.setProperty('--brand', CONFIG.BRAND);
+
+  let leaveFns = [];
+  const App = (window.App = {
+    state: {},
+    onLeave(fn) { leaveFns.push(fn); },
+    demoBar() {
+      if (!API.isDemo()) return '';
+      return `<div class="demo-bar"><span><b>โหมดตัวอย่าง</b> — ข้อมูลเก็บในเครื่องนี้เท่านั้น</span>
+        <button type="button" data-demo-reset>รีเซ็ตข้อมูลตัวอย่าง</button>
+        <button type="button" data-demo-exit>ออกจากโหมดตัวอย่าง</button></div>`;
+    },
+    bindCommon() {
+      $$('[data-logout]').forEach((b) => b.addEventListener('click', logout));
+      $$('[data-demo-reset]').forEach((b) => b.addEventListener('click', async () => {
+        if (!(await UI.confirmBox('ล้างข้อมูลตัวอย่างทั้งหมดแล้วเริ่มใหม่?', 'รีเซ็ต'))) return;
+        DemoBackend.reset(); API.clearSession(); App.state = {};
+        go('#/login');
+      }));
+      $$('[data-demo-exit]').forEach((b) => b.addEventListener('click', () => {
+        API.disableDemo(); App.state = {};
+        go(API.ready() ? '#/login' : '#/setup');
+      }));
+    }
+  });
+
+  function go(h) { if (location.hash === h) route(); else location.hash = h; }
+
+  async function logout() {
+    if (!(await UI.confirmBox('ออกจากระบบ?', 'ออกจากระบบ'))) return;
+    try { await API.call('logout'); } catch (e) { /* ไม่เป็นไร */ }
+    API.clearSession();
+    App.state = {};
+    location.hash = '#/login';
+  }
+
+  /* ====================== เชื่อมต่อระบบ ====================== */
+  V.setup = function () {
+    $('#app').innerHTML = `<div class="auth"><div class="auth-card" style="max-width:560px">
+      <div class="auth-top">${UI.brandMark(28)}
+        <div><h1>เชื่อมต่อระบบ</h1><div class="muted">ใส่ลิงก์เว็บแอปจาก Google Apps Script ที่สร้างจาก Google Sheet ของบริษัท</div></div></div>
+      <div class="auth-body">
+        <form id="su-form" style="display:flex;flex-direction:column;gap:14px">
+          <label class="field"><span>ลิงก์เว็บแอป (ลงท้ายด้วย /exec)</span>
+            <input class="input" name="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(App.state.setupFrom || '')}" required></label>
+          <button class="btn btn-primary btn-lg" type="submit">${icon('link', 20)}ทดสอบและเชื่อมต่อ</button>
+        </form>
+        <a href="${esc(CONFIG.GUIDE_URL || '#')}" target="_blank" rel="noopener" style="text-align:center">ยังไม่มีลิงก์? ดูวิธีติดตั้ง Google Sheet (5 ขั้นตอน)</a>
+        <div style="display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px"><span style="flex:1;height:1px;background:var(--line)"></span>หรือ<span style="flex:1;height:1px;background:var(--line)"></span></div>
+        <button type="button" class="btn btn-lg" id="su-demo">${icon('van', 20)}ลองระบบตัวอย่าง (ไม่ต้องตั้งค่า)</button>
+        <div class="muted small" style="text-align:center">โหมดตัวอย่างมีข้อมูลรถและคนขับตัวอย่าง เก็บไว้ในเครื่องนี้เท่านั้น</div>
+      </div></div></div>`;
+    $('#su-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = e.target.url.value.trim();
+      const btn = e.target.querySelector('button');
+      busy(btn, true, 'กำลังทดสอบ…');
+      try {
+        const info = await API.testUrl(url);
+        API.setApiUrl(url);
+        App.state = {};
+        toast(`เชื่อมต่อสำเร็จ · ${info.company || 'Smart Tracking'}`, 'good');
+        location.hash = '#/login';
+      } catch (err) { toast(err.message, 'bad'); busy(btn, false); }
+    });
+    $('#su-demo').addEventListener('click', () => { API.enableDemo(); App.state = {}; go('#/login'); });
+  };
+
+  /* ====================== เข้าสู่ระบบ ====================== */
+  V.login = async function () {
+    const st = { tab: App.state.loginTab || 'driver', drivers: null, driver: null, pin: '', company: '', busy: false };
+    let lastId = null;
+    try { lastId = localStorage.getItem('stj_last_driver'); } catch (e) { /* ไม่เป็นไร */ }
+
+    $('#app').innerHTML = `${App.demoBar()}<div class="auth"><div class="auth-card">
+      <div class="auth-top">${UI.brandMark(28)}
+        <div><h1 id="lg-company">Smart Tracking Jobs</h1><div class="muted">ระบบจ่ายงานและเช็คอินรถตู้</div></div></div>
+      <div class="auth-body" id="lg-body"><div class="loading-block"><span class="spinner"></span>กำลังโหลด…</div></div>
+    </div></div>`;
+    App.bindCommon();
+
+    try {
+      const [ping, drivers] = await Promise.all([API.call('ping'), API.call('publicDrivers')]);
+      st.company = ping.company; st.drivers = drivers;
+      $('#lg-company').textContent = ping.company || 'Smart Tracking Jobs';
+      if (lastId) st.driver = drivers.find((d) => d.id === lastId) || null;
+    } catch (e) {
+      $('#lg-body').innerHTML = `<div class="banner bad">${esc(e.message)}</div>
+        <button class="btn" id="lg-retry">${icon('refresh', 18)}ลองใหม่</button>
+        ${API.lockedUrl() ? '' : '<a href="#/setup" style="text-align:center">ตั้งค่าการเชื่อมต่อระบบ</a>'}`;
+      $('#lg-retry').addEventListener('click', () => V.login());
+      return;
+    }
+
+    function draw() {
+      const tabs = `<div class="tabs" role="tablist" aria-label="ประเภทผู้ใช้">
+        <button type="button" role="tab" aria-selected="${st.tab === 'driver'}" class="${st.tab === 'driver' ? 'on' : ''}" data-tab="driver">คนขับ</button>
+        <button type="button" role="tab" aria-selected="${st.tab === 'admin'}" class="${st.tab === 'admin' ? 'on' : ''}" data-tab="admin">แอดมิน / เจ้าของ</button></div>`;
+      let body = '';
+      if (st.tab === 'driver' && !st.driver) {
+        body = `<div class="field"><span>เลือกชื่อของคุณ</span></div>
+          ${st.drivers.length > 8 ? '<input class="input" id="lg-q" placeholder="ค้นหาชื่อ" autocomplete="off" aria-label="ค้นหาชื่อ">' : ''}
+          <div class="name-grid" id="lg-names"></div>`;
+      } else {
+        body = `${st.tab === 'driver'
+          ? `<div class="who-chip"><span style="display:flex;align-items:center;gap:10px;font-weight:600"><span class="avatar" style="background:var(--brand-soft);color:var(--brand-dark);width:32px;height:32px;font-size:14px">${esc(st.driver.name.slice(0, 1))}</span>${esc(st.driver.name)}</span><button type="button" class="btn btn-sm btn-ghost" id="lg-change">เปลี่ยนชื่อ</button></div>`
+          : '<div style="font-weight:600">ใส่ PIN แอดมิน 6 หลัก</div>'}
+          <div style="text-align:center;color:var(--muted);font-size:14px">${st.tab === 'driver' ? 'ใส่ PIN 6 หลัก' : ''}</div>
+          <div class="pin-dots" id="lg-dots" aria-hidden="true">${'<i></i>'.repeat(6)}</div>
+          <div id="lg-err" role="alert" style="min-height:22px;text-align:center;color:var(--bad);font-size:14px"></div>
+          <div class="keypad" id="lg-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" data-k="${n}">${n}</button>`).join('')}
+            <button type="button" class="fn" data-k="clear">ล้าง</button><button type="button" data-k="0">0</button>
+            <button type="button" class="fn" data-k="back" aria-label="ลบตัวเลข">⌫</button></div>`;
+      }
+      const hint = API.isDemo() ? `<div class="banner info small" style="font-size:13px">ลองใช้: แอดมิน PIN <b>000000</b> · คนขับ สมชาย <b>111111</b>, วิชัย <b>222222</b>, ประเสริฐ <b>333333</b>, อนุชา <b>444444</b></div>` : '';
+      $('#lg-body').innerHTML = tabs + body + hint;
+
+      $$('[data-tab]').forEach((b) => b.addEventListener('click', () => { st.tab = b.dataset.tab; App.state.loginTab = st.tab; st.pin = ''; draw(); }));
+      if (st.tab === 'driver' && !st.driver) {
+        const drawNames = () => {
+          const q = ($('#lg-q') ? $('#lg-q').value : '').trim().toLowerCase();
+          const list = st.drivers.filter((d) => !q || d.name.toLowerCase().includes(q));
+          $('#lg-names').innerHTML = list.length ? list.map((d) => `<button type="button" class="name-btn" data-d="${esc(d.id)}"><span class="avatar">${esc(d.name.slice(0, 1))}</span>${esc(d.name)}</button>`).join('')
+            : `<div class="muted small" style="grid-column:1/-1">${st.drivers.length ? 'ไม่พบชื่อ' : 'ยังไม่มีคนขับในระบบ — แอดมินเพิ่มคนขับได้ที่เมนู "คนขับ"'}</div>`;
+          $$('[data-d]').forEach((b) => b.addEventListener('click', () => { st.driver = st.drivers.find((d) => d.id === b.dataset.d); st.pin = ''; draw(); }));
+        };
+        if ($('#lg-q')) $('#lg-q').addEventListener('input', drawNames);
+        drawNames();
+      } else {
+        if ($('#lg-change')) $('#lg-change').addEventListener('click', () => { st.driver = null; st.pin = ''; draw(); });
+        $$('[data-k]').forEach((b) => b.addEventListener('click', () => key(b.dataset.k)));
+        dots();
+      }
+    }
+    function dots() {
+      $$('#lg-dots i').forEach((d, i) => d.classList.toggle('on', i < st.pin.length));
+    }
+    function key(k) {
+      if (st.busy || !$('#lg-pad')) return;
+      if (k === 'back') st.pin = st.pin.slice(0, -1);
+      else if (k === 'clear') st.pin = '';
+      else if (/^\d$/.test(k) && st.pin.length < 6) st.pin += k;
+      $('#lg-err').textContent = '';
+      dots();
+      if (st.pin.length === 6) submit();
+    }
+    async function submit() {
+      st.busy = true;
+      $('#lg-err').innerHTML = '<span class="spinner sm" style="display:inline-block;vertical-align:middle"></span> กำลังตรวจสอบ…';
+      $('#lg-err').style.color = 'var(--muted)';
+      try {
+        const res = await API.call('login', st.tab === 'admin' ? { role: 'admin', pin: st.pin } : { role: 'driver', driverId: st.driver.id, pin: st.pin });
+        API.setSession(res);
+        if (res.role === 'driver') { try { localStorage.setItem('stj_last_driver', res.user.id); } catch (e) { /* ไม่เป็นไร */ } }
+        toast(`ยินดีต้อนรับ ${res.user.name}`, 'good');
+        location.hash = res.role === 'admin' ? '#/admin' : '#/driver';
+      } catch (e) {
+        st.busy = false; st.pin = '';
+        dots();
+        const d = $('#lg-dots');
+        if (d) { d.classList.remove('err'); void d.offsetWidth; d.classList.add('err'); }
+        $('#lg-err').style.color = 'var(--bad)';
+        $('#lg-err').textContent = e.message;
+      }
+    }
+    const onKey = (e) => {
+      if (e.target && /input|textarea/i.test(e.target.tagName)) return;
+      if (/^\d$/.test(e.key)) key(e.key);
+      else if (e.key === 'Backspace') key('back');
+    };
+    document.addEventListener('keydown', onKey);
+    App.onLeave(() => document.removeEventListener('keydown', onKey));
+    draw();
+  };
+
+  /* ====================== เส้นทางหน้า ====================== */
+  const ROUTES = [
+    [/^#\/admin$/, 'admin', 'dashboard'],
+    [/^#\/admin\/jobs$/, 'admin', 'jobs'],
+    [/^#\/admin\/jobs\/new$/, 'admin', 'jobEdit'],
+    [/^#\/admin\/jobs\/([\w-]+)\/edit$/, 'admin', 'jobEdit'],
+    [/^#\/admin\/jobs\/([\w-]+)$/, 'admin', 'jobDetail'],
+    [/^#\/admin\/drivers$/, 'admin', 'drivers'],
+    [/^#\/admin\/settings$/, 'admin', 'settings'],
+    [/^#\/driver$/, 'driver', 'driverHome'],
+    [/^#\/driver\/job\/([\w-]+)$/, 'driver', 'driverJob']
+  ];
+
+  function route() {
+    leaveFns.forEach((f) => { try { f(); } catch (e) { /* ไม่เป็นไร */ } });
+    leaveFns = [];
+    document.querySelectorAll('.modal-bg').forEach((m) => m.remove());
+    const [path, qs] = (location.hash || '#/').split('?');
+    const query = new URLSearchParams(qs || '');
+    window.scrollTo(0, 0);
+
+    if (!API.ready()) { if (path !== '#/setup') { location.replace('#/setup'); return; } return V.setup(); }
+    if (path === '#/setup') return API.lockedUrl() ? location.replace('#/login') : V.setup();
+    const s = API.session();
+    if (!s) { if (path !== '#/login') { location.replace('#/login'); return; } return V.login(); }
+    const home = s.role === 'admin' ? '#/admin' : '#/driver';
+    if (path === '#/login' || path === '#/' || path === '#') { location.replace(home); return; }
+    for (const [re, role, view] of ROUTES) {
+      const m = path.match(re);
+      if (!m) continue;
+      if (role !== s.role) { location.replace(home); return; }
+      document.title = (s.company ? s.company + ' · ' : '') + 'Smart Tracking Jobs';
+      return V[view](m.slice(1), query);
+    }
+    location.replace(home);
+  }
+
+  window.addEventListener('hashchange', route);
+  window.addEventListener('error', (e) => console.error(e.error || e.message));
+  route();
+
+  if (CONFIG.SERVICE_WORKER && 'serviceWorker' in navigator && location.protocol === 'https:') {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* ไม่บังคับ */ });
+  }
+})();
+
+</script>
+</body>
+</html>
