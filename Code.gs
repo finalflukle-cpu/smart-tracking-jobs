@@ -13,7 +13,7 @@
  * PIN แอดมินเริ่มต้น: 000000 (เปลี่ยนได้ในหน้า ตั้งค่า ของแอป)
  */
 
-var APP_VERSION = '1.3.0';
+var APP_VERSION = '1.4.0';
 var DEFAULT_ADMIN_PIN = '000000';
 var SESSION_DAYS = { admin: 7, driver: 30 };
 var MAX_FAILS = 5;
@@ -652,7 +652,7 @@ function followMapsLink_(url) {
 /* ค้นหาด้วย Geocoder ของ Apps Script (ฟรี) + จำผลไว้ 6 ชม. เพื่อประหยัดโควตา */
 function geocodeList_(q, max) {
   var cache = CacheService.getScriptCache();
-  var key = 'geo:' + hex_(q);
+  var key = 'geo2:' + hex_(q);
   var hit = cache.get(key);
   var list;
   if (hit) {
@@ -664,7 +664,8 @@ function geocodeList_(q, max) {
     else {
       list = (r.results || []).slice(0, 6).map(function (x) {
         var loc = x.geometry.location;
-        return { name: guessName_(x, q), address: x.formatted_address || '', lat: loc.lat, lng: loc.lng,
+        var nm = placeName_(x, q);
+        return { name: nm.name, name_from: nm.from, address: x.formatted_address || '', lat: loc.lat, lng: loc.lng,
                  place_id: x.place_id || '', map_url: mapsUrl_(loc.lat, loc.lng, x.place_id) };
       });
     }
@@ -805,12 +806,27 @@ function mapsUrl_(lat, lng, placeId) {
     (placeId ? '&query_place_id=' + encodeURIComponent(placeId) : '');
 }
 
-function guessName_(result, q) {
-  var types = result.types || [];
-  var poi = types.some(function (t) { return /establishment|point_of_interest|premise|airport|park|university|school|hospital|shopping_mall/.test(t); });
-  var c = result.address_components && result.address_components[0];
-  if (poi && c && c.long_name && !/^\d/.test(c.long_name)) return c.long_name;
-  return q;
+/* ชื่อสถานที่จากผลค้นหาฟรี (Geocoder): Google ส่งกลับมาเป็น "ที่อยู่" ไม่ได้ส่งชื่อร้าน/ห้าง
+   from = 'google' (มีชื่อในผลลัพธ์จริง) | 'query' (เป็นสถานที่ แต่ใช้คำที่พิมพ์เป็นชื่อ) | 'address' (ไม่มีชื่อ ใช้ที่อยู่ส่วนต้น)
+   ถ้าไม่ใช่ 'google' หน้าแอปจะให้ผู้ใช้ยืนยัน/แก้ชื่อก่อนเพิ่ม */
+function placeName_(result, q) {
+  var comps = result.address_components || [];
+  var named = comps.filter(function (c) {
+    return (c.types || []).some(function (t) { return /point_of_interest|establishment|premise|natural_feature|airport|park|colloquial_area|tourist_attraction/.test(t); }) &&
+      c.long_name && !/^[\d\/\-\s]/.test(c.long_name);
+  })[0];
+  if (named) return { name: named.long_name, from: 'google' };
+  var poi = (result.types || []).some(function (t) {
+    return /establishment|point_of_interest|airport|park|university|school|hospital|shopping_mall|lodging|tourist_attraction|transit_station|store/.test(t);
+  });
+  if (poi) return { name: q, from: 'query' };
+  return { name: shortAddress_(result.formatted_address) || q, from: 'address' };
+}
+
+function shortAddress_(addr) {
+  var s = String(addr || '').replace(/\s*ประเทศไทย\s*$/, '').replace(/\s*\d{5}\s*$/, '').trim();
+  var m = s.match(/^(.*?)\s+(แขวง|ตำบล|ต\.|เขต|อำเภอ|อ\.)/);
+  return (m ? m[1] : s).slice(0, 80);
 }
 
 function upsertPlaces_(stops) {
